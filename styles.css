@@ -793,14 +793,6 @@ body {
         padding-top: 0;
     }
     
-    .card-actions {
-        flex-direction: column;
-    }
-    
-    .card-actions button {
-        width: 100%;
-    }
-    
     .date-selector {
         align-items: center;
         gap: var(--space-md);
