@@ -140,9 +140,11 @@
                 <h2 class="card-title"><i class="fas fa-database"></i> Data Management</h2>
                 <div class="data-actions">
                     <button id="export-data-btn" class="btn-secondary"><i class="fas fa-download"></i> Export Data</button>
-                    <button id="import-data-btn" class="btn-secondary"><i class="fas fa-upload"></i> Import Data</button>
+                    <label for="import-file-input" class="btn-secondary import-btn">
+                        <i class="fas fa-upload"></i> Import Data
+                    </label>
                 </div>
-                <input type="file" id="import-file-input" accept=".json" style="display: none;">
+                <input type="file" id="import-file-input" accept=".json" class="hidden">
             </div>
         </div>
 

@@ -239,9 +239,6 @@ function initializeEventListeners() {
     
     // Export/Import data
     document.getElementById('export-data-btn').addEventListener('click', exportData);
-    document.getElementById('import-data-btn').addEventListener('click', () => {
-        document.getElementById('import-file-input').click();
-    });
     document.getElementById('import-file-input').addEventListener('change', importData);
 }
 
