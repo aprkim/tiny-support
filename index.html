@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiny Deficit - Small deficits. Big wins.</title>
+    
+    <!-- Branding -->
+    <meta name="description" content="Track your weight, food, and exercise. Smart deficit tracking made simple.">
+    <meta name="theme-color" content="#BF3143">
+    
+    <!-- OG Tags -->
+    <meta property="og:title" content="Tiny Deficit">
+    <meta property="og:description" content="Small deficits. Big wins.">
+    <meta property="og:type" content="website">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Chart.js for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Main App Container -->
+    <div id="app" class="app-container">
+        
+        <!-- Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-btn active" data-screen="today">
+                <span class="nav-icon"><i class="fas fa-calendar-day"></i></span>
+                <span class="nav-label">Today</span>
+            </button>
+            <button class="nav-btn" data-screen="presets">
+                <span class="nav-icon"><i class="fas fa-utensils"></i></span>
+                <span class="nav-label">Presets</span>
+            </button>
+            <button class="nav-btn" data-screen="progress">
+                <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
+                <span class="nav-label">Progress</span>
+            </button>
+        </nav>
+
+        <!-- Today Screen -->
+        <div id="today-screen" class="screen active">
+            <header class="app-header">
+                <h1 class="app-title">Tiny Deficit</h1>
+                <p class="app-tagline">Small deficits. Big wins.</p>
+            </header>
+
+            <!-- Date Selector -->
+            <div class="card date-card">
+                <div class="date-selector">
+                    <button id="prev-day" class="date-nav-btn">‹</button>
+                    <div class="date-display">
+                        <input type="date" id="date-input" class="date-input">
+                        <div class="day-info">
+                            <span id="day-of-week" class="day-of-week">Friday</span>
+                            <span id="day-type" class="day-type weekend">Weekday</span>
+                        </div>
+                    </div>
+                    <button id="next-day" class="date-nav-btn">›</button>
+                </div>
+            </div>
+
+            <!-- Weight Card -->
+            <div class="card weight-card">
+                <h2 class="card-title"><i class="fas fa-weight"></i> Weight</h2>
+                <div class="weight-inputs">
+                    <div class="input-group">
+                        <label for="weight-lb">Pounds (lb)</label>
+                        <input type="number" id="weight-lb" placeholder="0.0" step="0.1" min="0">
+                    </div>
+                    <div class="conversion-arrow">↔</div>
+                    <div class="input-group">
+                        <label for="weight-kg">Kilograms (kg)</label>
+                        <input type="number" id="weight-kg" placeholder="0.0" step="0.1" min="0">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Card -->
+            <div class="card summary-card">
+                <h2 class="card-title"><i class="fas fa-clipboard-list"></i> Today's Summary</h2>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <span class="summary-label">Calories Eaten</span>
+                        <span id="total-calories-eaten" class="summary-value">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Calories Burned</span>
+                        <span id="total-calories-burned" class="summary-value">0</span>
+                    </div>
+                    <div class="summary-item net">
+                        <span class="summary-label">Net Calories</span>
+                        <span id="net-calories" class="summary-value">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Food Log -->
+            <div class="card food-card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-utensils"></i> Food Log</h2>
+                    <div class="card-actions">
+                        <button id="add-preset-btn" class="btn-secondary btn-sm">+ Preset</button>
+                        <button id="add-food-btn" class="btn-primary btn-sm">+ Food</button>
+                    </div>
+                </div>
+                <div id="food-list" class="item-list">
+                    <p class="empty-state">No food logged yet. Tap + Food to start!</p>
+                </div>
+            </div>
+
+            <!-- Exercise Log -->
+            <div class="card exercise-card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-dumbbell"></i> Exercise Log</h2>
+                    <button id="add-exercise-btn" class="btn-primary btn-sm">+ Exercise</button>
+                </div>
+                <div id="exercise-list" class="item-list">
+                    <p class="empty-state">No exercise logged yet. Tap + Exercise to start!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Presets Screen -->
+        <div id="presets-screen" class="screen">
+            <header class="screen-header">
+                <h1 class="screen-title">Preset Meals</h1>
+                <button id="add-new-preset-btn" class="btn-primary">+ New Preset</button>
+            </header>
+            <div id="presets-list" class="presets-container">
+                <p class="empty-state">No presets yet. Create your first one!</p>
+            </div>
+        </div>
+
+        <!-- Progress Screen -->
+        <div id="progress-screen" class="screen">
+            <header class="screen-header">
+                <h1 class="screen-title">Weight Progress</h1>
+                <div class="unit-toggle">
+                    <button id="toggle-lb" class="unit-btn active">lb</button>
+                    <button id="toggle-kg" class="unit-btn">kg</button>
+                </div>
+            </header>
+            <div class="chart-container">
+                <canvas id="weight-chart"></canvas>
+            </div>
+            <div class="chart-info">
+                <p id="chart-summary" class="chart-summary"></p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Food Entry Modal -->
+    <div id="food-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Food</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="food-form" class="modal-form">
+                <div class="form-group">
+                    <label for="food-name">Food Name</label>
+                    <input type="text" id="food-name" placeholder="e.g., Lunch salad" required>
+                </div>
+                <div class="form-group">
+                    <label for="food-category">Category</label>
+                    <select id="food-category">
+                        <option value="Breakfast">Breakfast</option>
+                        <option value="Lunch">Lunch</option>
+                        <option value="Dinner">Dinner</option>
+                        <option value="Snack">Snack</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="food-portion">Portion</label>
+                    <input type="text" id="food-portion" placeholder="e.g., 1 bowl, 30g">
+                </div>
+                <div class="form-group">
+                    <label for="food-note">Note / Ingredients</label>
+                    <textarea id="food-note" placeholder="e.g., 3 eggs, 20 pistachios, spinach..." rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="food-calories">Calories</label>
+                    <input type="number" id="food-calories" placeholder="0" min="0" required>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="save-as-preset">
+                        <span>Save as new preset</span>
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancel-food-btn">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Food</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Exercise Entry Modal -->
+    <div id="exercise-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Exercise</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="exercise-form" class="modal-form">
+                <div class="form-group">
+                    <label for="exercise-name">Exercise Name</label>
+                    <input type="text" id="exercise-name" placeholder="e.g., Running, Yoga" required>
+                </div>
+                <div class="form-group">
+                    <label for="exercise-duration">Duration (minutes)</label>
+                    <input type="number" id="exercise-duration" placeholder="0" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="exercise-calories">Calories Burned (optional)</label>
+                    <input type="number" id="exercise-calories" placeholder="0" min="0">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancel-exercise-btn">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Exercise</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Preset Modal -->
+    <div id="preset-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Create Preset Meal</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="preset-form" class="modal-form">
+                <div class="form-group">
+                    <label for="preset-name">Preset Name</label>
+                    <input type="text" id="preset-name" placeholder="e.g., My standard lunch salad" required>
+                </div>
+                <div class="form-group">
+                    <label for="preset-calories">Default Calories</label>
+                    <input type="number" id="preset-calories" placeholder="0" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="preset-description">Description (optional)</label>
+                    <textarea id="preset-description" placeholder="Ingredients or notes..." rows="3"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancel-preset-btn">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Preset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Preset Select Modal -->
+    <div id="preset-select-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Select Preset Meal</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div id="preset-select-list" class="preset-select-list">
+                <p class="empty-state">No presets available. Create one first!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="app.js"></script>
+</body>
+</html>
