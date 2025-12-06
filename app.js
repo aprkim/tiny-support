@@ -220,11 +220,15 @@ function initializeEventListeners() {
     // Food modal
     document.getElementById('add-food-btn').addEventListener('click', () => {
         document.getElementById('food-form').reset();
+        foodItems = [];
+        updateFoodItemsList();
         openModal('food-modal');
     });
     
     document.getElementById('cancel-food-btn').addEventListener('click', () => {
         document.getElementById('food-form').reset();
+        foodItems = [];
+        updateFoodItemsList();
         closeModal('food-modal');
     });
     
@@ -233,8 +237,17 @@ function initializeEventListeners() {
         addFood();
     });
     
-    // Lookup food calories
-    document.getElementById('lookup-food-calories-btn').addEventListener('click', lookupFoodCalories);
+    // Food search and add
+    document.getElementById('food-search-btn').addEventListener('click', searchFood);
+    document.getElementById('food-add-item-btn').addEventListener('click', addFoodItem);
+    
+    // Allow Enter key to search in food modal
+    document.getElementById('food-search-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            searchFood();
+        }
+    });
     
     // Exercise modal
     document.getElementById('add-exercise-btn').addEventListener('click', () => {
@@ -395,9 +408,9 @@ function renderFoodList(day) {
         <div class="item">
             <div class="item-info">
                 <div class="item-name">${food.name}</div>
-                <div class="item-details">
-                    ${food.category ? food.category + ' • ' : ''}${food.portion || 'N/A'}
-                </div>
+                ${food.category || food.portion ? `<div class="item-details">
+                    ${food.category ? food.category + ' • ' : ''}${food.portion || ''}
+                </div>` : ''}
                 ${food.note ? `<div class="item-note">${food.note}</div>` : ''}
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
@@ -449,45 +462,37 @@ function updateSummary(day) {
 // ===================================
 
 function addFood() {
-    const name = document.getElementById('food-name').value.trim();
-    const category = document.getElementById('food-category').value;
-    const portion = document.getElementById('food-portion').value.trim();
+    const foodName = document.getElementById('food-name').value.trim();
     const note = document.getElementById('food-note').value.trim();
-    const calories = parseInt(document.getElementById('food-calories').value);
-    const saveAsPreset = document.getElementById('save-as-preset').checked;
+    const totalCalories = parseInt(document.getElementById('food-total-calories').value);
     
-    if (!name || isNaN(calories)) {
-        customAlert('Please fill in food name and calories');
+    if (!foodName) {
+        customAlert('Please enter a food name');
+        return;
+    }
+    
+    if (isNaN(totalCalories) || totalCalories <= 0) {
+        customAlert('Please add at least one food item');
         return;
     }
     
     const day = getOrCreateDayData(currentDate);
+    
+    // Create a single food entry with the given name and all items' calories combined
     const food = {
         id: 'food-' + Date.now(),
-        name: name,
-        category: category,
-        portion: portion,
+        name: foodName,
         note: note,
-        calories: calories
+        calories: totalCalories
     };
-    
     day.foods.push(food);
+    
     saveData();
     
-    // Save as preset if checked
-    if (saveAsPreset) {
-        const preset = {
-            id: 'preset-' + Date.now(),
-            name: name,
-            defaultCalories: calories,
-            description: portion ? `Portion: ${portion}` : ''
-        };
-        appData.presets.push(preset);
-        saveData();
-    }
-    
-    // Reset form and close
+    // Reset form
     document.getElementById('food-form').reset();
+    foodItems = [];
+    updateFoodItemsList();
     closeModal('food-modal');
     loadTodayScreen();
 }
@@ -601,6 +606,7 @@ async function deletePreset(index) {
 
 let editingPresetIndex = null;
 let presetItems = [];
+let foodItems = [];
 
 function editPreset(index) {
     editingPresetIndex = index;
@@ -623,6 +629,51 @@ async function searchPresetFood() {
     const searchInput = document.getElementById('preset-search-input');
     const caloriesInput = document.getElementById('preset-search-calories');
     const searchBtn = document.getElementById('preset-search-btn');
+    const name = searchInput.value.trim();
+    
+    if (!name) {
+        await customAlert('Please enter a food name to search');
+        return;
+    }
+    
+    // Show loading state
+    searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    searchBtn.disabled = true;
+    
+    try {
+        const response = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(name)}&search_simple=1&action=process&json=1&page_size=1`);
+        const data = await response.json();
+        
+        if (data.products && data.products.length > 0) {
+            const product = data.products[0];
+            // Energy is in kJ per 100g, convert to kcal
+            const energyKcal = product.nutriments['energy-kcal_100g'] || product.nutriments['energy-kcal'];
+            
+            if (energyKcal) {
+                const calories = Math.round(energyKcal);
+                caloriesInput.value = calories;
+            } else {
+                await customAlert('Could not find calorie information for this food');
+                caloriesInput.value = '';
+            }
+        } else {
+            await customAlert('Food not found. Please try a different name.');
+            caloriesInput.value = '';
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+        await customAlert('Unable to search. Please try again.');
+        caloriesInput.value = '';
+    } finally {
+        searchBtn.innerHTML = '<i class="fas fa-search"></i>';
+        searchBtn.disabled = false;
+    }
+}
+
+async function searchFood() {
+    const searchInput = document.getElementById('food-search-input');
+    const caloriesInput = document.getElementById('food-search-calories');
+    const searchBtn = document.getElementById('food-search-btn');
     const name = searchInput.value.trim();
     
     if (!name) {
@@ -688,9 +739,38 @@ function addPresetItem() {
     updatePresetItemsList();
 }
 
+function addFoodItem() {
+    const name = document.getElementById('food-search-input').value.trim();
+    const calories = parseInt(document.getElementById('food-search-calories').value);
+    
+    if (!name) {
+        customAlert('Please enter a food name');
+        return;
+    }
+    
+    if (isNaN(calories) || calories <= 0) {
+        customAlert('Please search for calories first or enter a valid amount');
+        return;
+    }
+    
+    foodItems.push({ name, calories });
+    
+    // Clear inputs
+    document.getElementById('food-search-input').value = '';
+    document.getElementById('food-search-calories').value = '';
+    document.getElementById('food-search-input').focus();
+    
+    updateFoodItemsList();
+}
+
 function removePresetItem(index) {
     presetItems.splice(index, 1);
     updatePresetItemsList();
+}
+
+function removeFoodItem(index) {
+    foodItems.splice(index, 1);
+    updateFoodItemsList();
 }
 
 function updatePresetItemsList() {
@@ -721,46 +801,35 @@ function updatePresetItemsList() {
     totalInput.value = total;
 }
 
-async function lookupFoodCalories() {
-    const name = document.getElementById('food-name').value.trim();
-    const caloriesInput = document.getElementById('food-calories');
-    const lookupBtn = document.getElementById('lookup-food-calories-btn');
+function updateFoodItemsList() {
+    const container = document.getElementById('food-items-list');
+    const totalInput = document.getElementById('food-total-calories');
     
-    if (!name) {
-        await customAlert('Please enter a food name first');
+    if (foodItems.length === 0) {
+        container.innerHTML = '<p class="empty-state">No items added yet</p>';
+        // Don't reset total if user manually entered a value
+        if (!totalInput.value || totalInput.value === '0') {
+            totalInput.value = '';
+        }
         return;
     }
     
-    // Show loading state
-    lookupBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    lookupBtn.disabled = true;
+    // Calculate total
+    const total = foodItems.reduce((sum, item) => sum + item.calories, 0);
     
-    try {
-        const response = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(name)}&search_simple=1&action=process&json=1&page_size=1`);
-        const data = await response.json();
-        
-        if (data.products && data.products.length > 0) {
-            const product = data.products[0];
-            // Energy is in kJ per 100g, convert to kcal
-            const energyKcal = product.nutriments['energy-kcal_100g'] || product.nutriments['energy-kcal'];
-            
-            if (energyKcal) {
-                const calories = Math.round(energyKcal);
-                caloriesInput.value = calories;
-                caloriesInput.focus();
-            } else {
-                await customAlert('Could not find calorie information for this food');
-            }
-        } else {
-            await customAlert('Food not found. Please try a different name or enter calories manually.');
-        }
-    } catch (error) {
-        console.error('Calorie lookup error:', error);
-        await customAlert('Unable to look up calories. Please enter manually.');
-    } finally {
-        lookupBtn.innerHTML = '<i class="fas fa-search"></i>';
-        lookupBtn.disabled = false;
-    }
+    // Update display
+    container.innerHTML = foodItems.map((item, index) => `
+        <div class="preset-list-item">
+            <div class="preset-list-item-info">
+                <div class="preset-list-item-name">${item.name}</div>
+            </div>
+            <span class="preset-list-item-calories">${item.calories} kcal</span>
+            <button type="button" class="preset-list-item-remove" onclick="removeFoodItem(${index})">&times;</button>
+        </div>
+    `).join('');
+    
+    // Update total
+    totalInput.value = total;
 }
 
 function loadPresetsScreen() {
@@ -938,12 +1007,14 @@ function closeAllModals() {
         // Reset forms when closing modals
         if (modal.id === 'food-modal') {
             document.getElementById('food-form').reset();
+            foodItems = [];
+            updateFoodItemsList();
         } else if (modal.id === 'exercise-modal') {
             document.getElementById('exercise-form').reset();
         } else if (modal.id === 'preset-modal') {
             document.getElementById('preset-form').reset();
-            presetFoodItems = [];
-            updatePresetFoodItemsDisplay();
+            presetItems = [];
+            updatePresetItemsList();
         }
         modal.classList.remove('active');
     });

@@ -601,6 +601,13 @@ body {
     border: 2px solid var(--border-gray);
     border-radius: var(--radius-md);
     transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"] {
+    height: 44px;
+    padding: 10px var(--space-md);
 }
 
 .form-group input:focus,
