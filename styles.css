@@ -771,6 +771,24 @@ body {
     flex: 1;
 }
 
+/* Calorie Lookup Group */
+.calorie-lookup-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.calorie-lookup-group button {
+    flex: 0 0 auto;
+    min-width: 44px;
+    height: 44px;
+    padding: 10px 12px;
+}
+
+.calorie-lookup-group input {
+    flex: 1;
+}
+
 /* ===================================
    Presets Screen
    =================================== */

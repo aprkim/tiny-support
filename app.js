@@ -161,10 +161,12 @@ function initializeEventListeners() {
     
     // Food modal
     document.getElementById('add-food-btn').addEventListener('click', () => {
+        document.getElementById('food-form').reset();
         openModal('food-modal');
     });
     
     document.getElementById('cancel-food-btn').addEventListener('click', () => {
+        document.getElementById('food-form').reset();
         closeModal('food-modal');
     });
     
@@ -173,12 +175,17 @@ function initializeEventListeners() {
         addFood();
     });
     
+    // Lookup food calories
+    document.getElementById('lookup-food-calories-btn').addEventListener('click', lookupFoodCalories);
+    
     // Exercise modal
     document.getElementById('add-exercise-btn').addEventListener('click', () => {
+        document.getElementById('exercise-form').reset();
         openModal('exercise-modal');
     });
     
     document.getElementById('cancel-exercise-btn').addEventListener('click', () => {
+        document.getElementById('exercise-form').reset();
         closeModal('exercise-modal');
     });
     
@@ -194,12 +201,17 @@ function initializeEventListeners() {
     });
     
     document.getElementById('add-new-preset-btn').addEventListener('click', () => {
+        document.getElementById('preset-form').reset();
         presetFoodItems = [];
         updatePresetFoodItemsDisplay();
+        document.querySelector('#preset-modal .modal-title').textContent = 'Create Preset Meal';
         openModal('preset-modal');
     });
     
     document.getElementById('cancel-preset-btn').addEventListener('click', () => {
+        document.getElementById('preset-form').reset();
+        presetFoodItems = [];
+        updatePresetFoodItemsDisplay();
         closeModal('preset-modal');
     });
     
@@ -550,6 +562,49 @@ function editPreset(index) {
     openModal('preset-modal');
 }
 
+async function lookupFoodCalories() {
+    const name = document.getElementById('food-name').value.trim();
+    const caloriesInput = document.getElementById('food-calories');
+    const lookupBtn = document.getElementById('lookup-food-calories-btn');
+    
+    if (!name) {
+        await customAlert('Please enter a food name first');
+        return;
+    }
+    
+    // Show loading state
+    lookupBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    lookupBtn.disabled = true;
+    
+    try {
+        const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(name)}&pageSize=1&api_key=DEMO_KEY`);
+        const data = await response.json();
+        
+        if (data.foods && data.foods.length > 0) {
+            const food = data.foods[0];
+            const calorieNutrient = food.foodNutrients.find(n => 
+                n.nutrientName === 'Energy' && n.unitName === 'KCAL'
+            );
+            
+            if (calorieNutrient) {
+                const calories = Math.round(calorieNutrient.value);
+                caloriesInput.value = calories;
+                caloriesInput.focus();
+            } else {
+                await customAlert('Could not find calorie information for this food');
+            }
+        } else {
+            await customAlert('Food not found. Please try a different name or enter calories manually.');
+        }
+    } catch (error) {
+        console.error('Calorie lookup error:', error);
+        await customAlert('Unable to look up calories. Please enter manually.');
+    } finally {
+        lookupBtn.innerHTML = '<i class="fas fa-search"></i>';
+        lookupBtn.disabled = false;
+    }
+}
+
 async function lookupCalories() {
     const name = document.getElementById('preset-item-name').value.trim();
     const caloriesInput = document.getElementById('preset-item-calories');
@@ -807,6 +862,16 @@ function closeModal(modalId) {
 
 function closeAllModals() {
     document.querySelectorAll('.modal').forEach(modal => {
+        // Reset forms when closing modals
+        if (modal.id === 'food-modal') {
+            document.getElementById('food-form').reset();
+        } else if (modal.id === 'exercise-modal') {
+            document.getElementById('exercise-form').reset();
+        } else if (modal.id === 'preset-modal') {
+            document.getElementById('preset-form').reset();
+            presetFoodItems = [];
+            updatePresetFoodItemsDisplay();
+        }
         modal.classList.remove('active');
     });
 }
