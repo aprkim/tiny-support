@@ -604,11 +604,26 @@ function loadPresetsScreen() {
                 <div class="preset-calories">${preset.defaultCalories} kcal</div>
             </div>
             <div class="preset-actions">
-                <button class="btn-secondary btn-sm" onclick="editPreset(${index})">Edit</button>
-                <button class="btn-secondary btn-sm" onclick="deletePreset(${index}).catch(e => console.error(e))">Delete</button>
+                <button class="btn-secondary btn-sm preset-edit-btn" data-index="${index}">Edit</button>
+                <button class="btn-secondary btn-sm preset-delete-btn" data-index="${index}">Delete</button>
             </div>
         </div>
     `).join('');
+    
+    // Attach event listeners
+    container.querySelectorAll('.preset-edit-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const index = parseInt(btn.dataset.index);
+            editPreset(index);
+        });
+    });
+    
+    container.querySelectorAll('.preset-delete-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const index = parseInt(btn.dataset.index);
+            await deletePreset(index);
+        });
+    });
 }
 
 function loadPresetSelectList() {
