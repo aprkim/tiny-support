@@ -392,8 +392,8 @@ function initializeEventListeners() {
         renderGraph();
     });
 
-    // Clear progress button
-    document.getElementById('clear-progress-btn').addEventListener('click', confirmClearProgress);
+    // Clear all weight data button
+    document.getElementById('clear-all-weight-btn').addEventListener('click', confirmClearAllWeight);
 
     // Export/Import data
     document.getElementById('export-data-btn').addEventListener('click', exportData);
@@ -1151,29 +1151,30 @@ let chartInstance = null;
 
 function renderGraph() {
     const daysWithWeight = appData.days.filter(d => d.weightLb !== null && d.weightLb !== undefined);
-    
+
     if (daysWithWeight.length === 0) {
         document.getElementById('chart-summary').textContent = 'No weight data yet. Start logging your weight!';
+        document.getElementById('weight-data-card').style.display = 'none';
         return;
     }
-    
+
     // Sort by date
     daysWithWeight.sort((a, b) => a.date.localeCompare(b.date));
-    
+
     const labels = daysWithWeight.map(d => {
         const date = new Date(d.date + 'T12:00:00');
         return `${date.getMonth() + 1}/${date.getDate()}`;
     });
-    
+
     const data = daysWithWeight.map(d => currentUnit === 'lb' ? d.weightLb : d.weightKg);
-    
+
     const ctx = document.getElementById('weight-chart');
-    
+
     // Destroy previous chart
     if (chartInstance) {
         chartInstance.destroy();
     }
-    
+
     chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
@@ -1210,15 +1211,82 @@ function renderGraph() {
             }
         }
     });
-    
+
     // Update summary
     const firstWeight = data[0];
     const lastWeight = data[data.length - 1];
     const change = lastWeight - firstWeight;
     const changeText = change >= 0 ? `+${change.toFixed(1)}` : change.toFixed(1);
-    
-    document.getElementById('chart-summary').textContent = 
+
+    document.getElementById('chart-summary').textContent =
         `${daysWithWeight.length} days tracked • ${changeText} ${currentUnit} change`;
+
+    // Render weight data list
+    renderWeightDataList(daysWithWeight);
+}
+
+function renderWeightDataList(daysWithWeight) {
+    const listEl = document.getElementById('weight-data-list');
+    const cardEl = document.getElementById('weight-data-card');
+
+    if (daysWithWeight.length === 0) {
+        cardEl.style.display = 'none';
+        return;
+    }
+
+    cardEl.style.display = 'block';
+
+    // Sort by date descending (most recent first)
+    const sortedDays = [...daysWithWeight].sort((a, b) => b.date.localeCompare(a.date));
+
+    listEl.innerHTML = sortedDays.map((day) => {
+        const date = new Date(day.date + 'T12:00:00');
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
+        const weight = currentUnit === 'lb' ? day.weightLb : day.weightKg;
+
+        return `
+            <div class="item">
+                <div class="item-info">
+                    <div class="item-name">${dateStr}</div>
+                    <div class="item-details">${dayName}</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="item-value">${weight.toFixed(1)} ${currentUnit}</div>
+                    <div class="item-actions">
+                        <button class="item-delete" onclick="deleteWeightData('${day.date}')">&times;</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function deleteWeightData(date) {
+    const confirmed = await customConfirm(`Delete weight data for ${date}?`);
+    if (!confirmed) return;
+
+    const day = getDayData(date);
+    if (day) {
+        day.weightLb = null;
+        day.weightKg = null;
+        saveData();
+        renderGraph();
+    }
+}
+
+async function confirmClearAllWeight() {
+    const confirmed = await customConfirm('Clear all weight data? This cannot be undone.');
+    if (!confirmed) return;
+
+    // Clear weight from all days
+    appData.days.forEach(day => {
+        day.weightLb = null;
+        day.weightKg = null;
+    });
+    saveData();
+    renderGraph();
+    customAlert('All weight data cleared successfully');
 }
 
 // ===================================
@@ -1292,24 +1360,6 @@ function deleteAllData() {
     }, 1500);
 }
 
-async function confirmClearProgress() {
-    const confirmed = await customConfirm('Clear all weight progress data? This cannot be undone.');
-    if (confirmed) {
-        clearProgress();
-    }
-}
-
-function clearProgress() {
-    // Clear weight data from all days
-    appData.days.forEach(day => {
-        if (day.weight) {
-            delete day.weight;
-        }
-    });
-    saveData();
-    renderGraph();
-    customAlert('Weight progress cleared successfully');
-}
 
 // ===================================
 // Sync Code Functions
