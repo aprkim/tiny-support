@@ -1503,6 +1503,7 @@ function submitSyncCode() {
 
     // Save the sync code
     localStorage.setItem('tiny-body-sync-code', code);
+    syncCodeForFirebase = code;
     updateSyncCodeDisplay(code);
     updateSyncPill(true);
 
@@ -1512,7 +1513,14 @@ function submitSyncCode() {
     if (textEl) textEl.textContent = code;
     if (card) card.style.display = 'flex';
 
-    customAlert('Sync code set! Note: This is a placeholder. Full sync functionality coming soon.');
+    // Restart Firebase sync with new code
+    if (unsubscribe) unsubscribe();
+    isFirstLoad = true;
+    if (firebaseReady) {
+        setupFirebaseSync();
+    }
+
+    customAlert('Sync code set! Your data will now sync across devices.');
     input.value = '';
 }
 
@@ -1570,7 +1578,149 @@ async function importData(event) {
     };
     
     reader.readAsText(file);
-    
+
     // Reset file input
     event.target.value = '';
 }
+
+// ===================================
+// Firebase Sync
+// ===================================
+
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyBycFP3HfMF7tyshQixvwzoaAE3Df8Fz_8",
+    authDomain: "tiny-wins25.firebaseapp.com",
+    projectId: "tiny-wins25",
+    storageBucket: "tiny-wins25.firebasestorage.app",
+    messagingSenderId: "497477643272",
+    appId: "1:497477643272:web:9f8e43fbffd18003e5f5bd"
+};
+
+// Initialize Firebase
+let db, auth;
+let firebaseReady = false;
+let syncCodeForFirebase = null;
+let unsubscribe = null;
+let isFirstLoad = true;
+
+try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    auth = firebase.auth();
+
+    // Enable offline persistence
+    db.enablePersistence({ synchronizeTabs: true })
+        .catch((err) => {
+            if (err.code === 'failed-precondition') {
+                console.warn('⚠️ Persistence: Multiple tabs open');
+            } else if (err.code === 'unimplemented') {
+                console.warn('⚠️ Persistence not available');
+            }
+        });
+
+    console.log('✅ Firebase initialized');
+
+    // Auto sign-in anonymously
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            firebaseReady = true;
+            syncCodeForFirebase = getSyncCode();
+
+            console.log('✅ User ID:', user.uid);
+            console.log('🔑 Sync Code:', syncCodeForFirebase);
+
+            if (syncCodeForFirebase) {
+                setupFirebaseSync();
+            }
+        } else {
+            auth.signInAnonymously()
+                .then(() => console.log('✅ Signed in anonymously'))
+                .catch((err) => console.error('❌ Auth failed:', err));
+        }
+    });
+
+} catch (error) {
+    console.error('❌ Firebase init failed:', error);
+}
+
+// Setup Firebase real-time sync
+function setupFirebaseSync() {
+    if (!firebaseReady || !syncCodeForFirebase) return;
+
+    const userDoc = db.collection('tinyBody').doc(syncCodeForFirebase);
+
+    // Listen for remote changes
+    unsubscribe = userDoc.onSnapshot((doc) => {
+        if (doc.exists) {
+            const remoteData = doc.data();
+
+            // Apply remote data
+            if (remoteData.days) appData.days = remoteData.days;
+            if (remoteData.presets) appData.presets = remoteData.presets;
+            if (remoteData.exercisePresets) appData.exercisePresets = remoteData.exercisePresets;
+
+            // Save to localStorage
+            localStorage.setItem('tiny-tweaks-data', JSON.stringify(appData));
+
+            // Refresh current screen
+            const activeScreen = document.querySelector('.screen.active');
+            if (activeScreen) {
+                const screenId = activeScreen.id;
+                if (screenId === 'today-screen') {
+                    loadTodayScreen();
+                } else if (screenId === 'presets-screen') {
+                    loadPresetsScreen();
+                    loadExercisePresetsScreen();
+                } else if (screenId === 'progress-screen') {
+                    renderGraph();
+                }
+            }
+
+            console.log(isFirstLoad ? '✅ Loaded from Firestore' : '✅ Synced from another device');
+        } else if (!doc.exists && isFirstLoad) {
+            // No remote data yet, push local data
+            saveToFirestore();
+            console.log('✅ Initial sync: Local → Firestore');
+        }
+
+        isFirstLoad = false;
+    }, (error) => {
+        console.error('❌ Sync error:', error);
+
+        if (error.code === 'permission-denied') {
+            console.warn('⚠️ Firestore rules not deployed yet');
+            firebaseReady = false;
+        }
+    });
+}
+
+// Save to Firestore
+async function saveToFirestore() {
+    if (!firebaseReady || !syncCodeForFirebase) return;
+
+    try {
+        await db.collection('tinyBody').doc(syncCodeForFirebase).set({
+            days: appData.days,
+            presets: appData.presets,
+            exercisePresets: appData.exercisePresets,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        console.log('✅ Saved to Firestore');
+    } catch (error) {
+        console.error('❌ Save failed:', error);
+
+        if (error.code === 'permission-denied') {
+            console.warn('⚠️ Firestore rules not deployed. Using localStorage only.');
+            firebaseReady = false;
+        }
+    }
+}
+
+// Hook into existing saveData function
+const originalSaveData = saveData;
+saveData = function() {
+    originalSaveData();
+    saveToFirestore();
+};
