@@ -477,7 +477,7 @@ function renderFoodList(day) {
     const listEl = document.getElementById('food-list');
     
     if (day.foods.length === 0) {
-        listEl.innerHTML = '<p class="empty-state">No food logged yet. Tap + Food to start!</p>';
+        listEl.innerHTML = '<p class="empty-state">No food logged yet.</p>';
         return;
     }
     
@@ -504,7 +504,7 @@ function renderExerciseList(day) {
     const listEl = document.getElementById('exercise-list');
     
     if (day.exercises.length === 0) {
-        listEl.innerHTML = '<p class="empty-state">No exercise logged yet. Tap + Exercise to start!</p>';
+        listEl.innerHTML = '<p class="empty-state">No exercise logged yet.</p>';
         return;
     }
     
