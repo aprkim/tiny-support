@@ -111,6 +111,7 @@ function loadData() {
 
 function saveData() {
     localStorage.setItem('tiny-tweaks-data', JSON.stringify(appData));
+    saveToFirestore();
 }
 
 function getDayData(date) {
@@ -1539,7 +1540,7 @@ function exportData() {
     const link = document.createElement('a');
     link.href = url;
     const date = getLocalDateString();
-    link.download = `tiny-tweaks-backup-${date}.json`;
+    link.download = `tiny-body-backup-${date}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
