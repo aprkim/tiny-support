@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tiny Room</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <!-- Import Map for Bridge.js -->
     <script type="importmap">
@@ -93,6 +94,16 @@
             color: var(--muted);
             font-size: 14px;
             margin-bottom: 32px;
+        }
+
+        .version {
+            position: absolute;
+            bottom: 8px;
+            right: 12px;
+            font-size: 11px;
+            color: var(--muted);
+            opacity: 0.6;
+            font-family: monospace;
         }
 
         .form-group {
@@ -1030,6 +1041,7 @@
         <div class="landing-card">
             <div class="logo">Tiny<span class="logo-accent">Room</span></div>
             <p class="tagline">Simple video chat for up to 8 people</p>
+            <div class="version">v2026.01.16</div>
 
             <div id="error-container" class="error-message hidden"></div>
 
