@@ -1633,6 +1633,10 @@ try {
 
             console.log('✅ User ID:', user.uid);
             console.log('🔑 Sync Code:', syncCodeForFirebase);
+            console.log('🔐 Is Anonymous:', user.isAnonymous);
+
+            // Update UI based on auth state
+            updateAuthUI(user);
 
             if (syncCodeForFirebase) {
                 setupFirebaseSync();
@@ -1646,6 +1650,173 @@ try {
 
 } catch (error) {
     console.error('❌ Firebase init failed:', error);
+}
+
+// ===================================
+// Email Authentication Functions
+// ===================================
+
+let isSignInMode = false;
+
+function updateAuthUI(user) {
+    const guestAccountState = document.getElementById('guestAccountState');
+    const accountForm = document.getElementById('accountForm');
+    const signedInState = document.getElementById('signedInState');
+    const userEmailSpan = document.getElementById('userEmail');
+
+    if (user.isAnonymous) {
+        // Show guest account state
+        guestAccountState.style.display = 'block';
+        accountForm.style.display = 'none';
+        signedInState.style.display = 'none';
+    } else {
+        // Show signed in state
+        guestAccountState.style.display = 'none';
+        accountForm.style.display = 'none';
+        signedInState.style.display = 'block';
+        userEmailSpan.textContent = user.email;
+    }
+}
+
+function showCreateAccountForm() {
+    isSignInMode = false;
+    const guestAccountState = document.getElementById('guestAccountState');
+    const accountForm = document.getElementById('accountForm');
+    const accountFormDescription = document.getElementById('accountFormDescription');
+    const authSubmitBtn = document.getElementById('authSubmitBtn');
+    const authToggleText = document.getElementById('authToggleText');
+
+    guestAccountState.style.display = 'none';
+    accountForm.style.display = 'block';
+    accountFormDescription.textContent = 'Create a new account to save your data';
+    authSubmitBtn.textContent = 'Create Account';
+    authToggleText.innerHTML = 'Already have an account? <a href="#" onclick="toggleAuthMode(); return false;" style="color: #BF3143; text-decoration: underline;">Sign in</a>';
+
+    // Clear form
+    document.getElementById('authEmail').value = '';
+    document.getElementById('authPassword').value = '';
+    document.getElementById('authError').style.display = 'none';
+}
+
+function showSignInForm() {
+    isSignInMode = true;
+    const guestAccountState = document.getElementById('guestAccountState');
+    const accountForm = document.getElementById('accountForm');
+    const accountFormDescription = document.getElementById('accountFormDescription');
+    const authSubmitBtn = document.getElementById('authSubmitBtn');
+    const authToggleText = document.getElementById('authToggleText');
+
+    guestAccountState.style.display = 'none';
+    accountForm.style.display = 'block';
+    accountFormDescription.textContent = 'Sign in to your existing account';
+    authSubmitBtn.textContent = 'Sign In';
+    authToggleText.innerHTML = 'Don\'t have an account? <a href="#" onclick="toggleAuthMode(); return false;" style="color: #BF3143; text-decoration: underline;">Create one</a>';
+
+    // Clear form
+    document.getElementById('authEmail').value = '';
+    document.getElementById('authPassword').value = '';
+    document.getElementById('authError').style.display = 'none';
+}
+
+function toggleAuthMode() {
+    if (isSignInMode) {
+        showCreateAccountForm();
+    } else {
+        showSignInForm();
+    }
+}
+
+function hideAccountForm() {
+    const guestAccountState = document.getElementById('guestAccountState');
+    const accountForm = document.getElementById('accountForm');
+
+    accountForm.style.display = 'none';
+    guestAccountState.style.display = 'block';
+
+    // Clear form
+    document.getElementById('authEmail').value = '';
+    document.getElementById('authPassword').value = '';
+    document.getElementById('authError').style.display = 'none';
+}
+
+async function handleAuthSubmit() {
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    const authError = document.getElementById('authError');
+    const authSubmitBtn = document.getElementById('authSubmitBtn');
+
+    if (!email || !password) {
+        authError.textContent = 'Please enter both email and password';
+        authError.style.display = 'block';
+        return;
+    }
+
+    authError.style.display = 'none';
+    authSubmitBtn.disabled = true;
+    authSubmitBtn.textContent = '...';
+
+    try {
+        if (isSignInMode) {
+            // Sign in with existing account
+            const credential = firebase.auth.EmailAuthProvider.credential(email, password);
+            await auth.currentUser.linkWithCredential(credential);
+            console.log('✅ Signed in successfully');
+        } else {
+            // Create new account and link with anonymous account
+            const credential = firebase.auth.EmailAuthProvider.credential(email, password);
+            await auth.currentUser.linkWithCredential(credential);
+            console.log('✅ Account created and linked successfully');
+        }
+
+        // Form will be hidden by onAuthStateChanged callback
+    } catch (error) {
+        console.error('❌ Auth error:', error);
+
+        if (error.code === 'auth/email-already-in-use') {
+            // If email already in use, try signing in instead
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                console.log('✅ Signed in with existing account');
+
+                // Transfer data from anonymous account if needed
+                // (The onAuthStateChanged will handle UI update)
+            } catch (signInError) {
+                authError.textContent = 'This email is already registered. Please sign in or use a different email.';
+                authError.style.display = 'block';
+            }
+        } else if (error.code === 'auth/weak-password') {
+            authError.textContent = 'Password should be at least 6 characters.';
+            authError.style.display = 'block';
+        } else if (error.code === 'auth/invalid-email') {
+            authError.textContent = 'Please enter a valid email address.';
+            authError.style.display = 'block';
+        } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+            authError.textContent = 'Invalid email or password.';
+            authError.style.display = 'block';
+        } else {
+            authError.textContent = error.message || 'An error occurred. Please try again.';
+            authError.style.display = 'block';
+        }
+
+        authSubmitBtn.disabled = false;
+        authSubmitBtn.textContent = isSignInMode ? 'Sign In' : 'Create Account';
+    }
+}
+
+async function handleSignOut() {
+    if (!confirm('Are you sure you want to sign out? You can sign back in anytime with your email and password.')) {
+        return;
+    }
+
+    try {
+        await auth.signOut();
+        // Sign in anonymously again
+        await auth.signInAnonymously();
+        console.log('✅ Signed out successfully');
+    } catch (error) {
+        console.error('❌ Sign out error:', error);
+        alert('Failed to sign out. Please try again.');
+    }
 }
 
 // Setup Firebase real-time sync
