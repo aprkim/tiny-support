@@ -1758,8 +1758,7 @@ async function handleAuthSubmit() {
     try {
         if (isSignInMode) {
             // Sign in with existing account
-            const credential = firebase.auth.EmailAuthProvider.credential(email, password);
-            await auth.currentUser.linkWithCredential(credential);
+            await auth.signInWithEmailAndPassword(email, password);
             console.log('✅ Signed in successfully');
         } else {
             // Create new account and link with anonymous account
