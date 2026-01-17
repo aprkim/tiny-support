@@ -1781,7 +1781,7 @@ async function handleAuthSubmit() {
                 // Transfer data from anonymous account if needed
                 // (The onAuthStateChanged will handle UI update)
             } catch (signInError) {
-                authError.textContent = 'This email is already registered. Please sign in or use a different email.';
+                authError.textContent = 'This email already has a TinyWins account. Please use Sign In instead.';
                 authError.style.display = 'block';
             }
         } else if (error.code === 'auth/weak-password') {
