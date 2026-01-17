@@ -569,6 +569,24 @@
         </div>
     </div>
 
+    <!-- Forgot Password Modal -->
+    <div id="forgot-password-modal" class="modal custom-dialog">
+        <div class="modal-content dialog-content">
+            <div class="dialog-body">
+                <div class="dialog-icon dialog-icon-info">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <p class="dialog-message">Enter your email to reset password</p>
+                <input type="email" id="forgot-password-email" class="dialog-input" placeholder="Email address">
+                <p id="forgot-password-error" class="dialog-error" style="display: none;"></p>
+            </div>
+            <div class="dialog-actions">
+                <button class="btn-secondary" id="forgot-password-cancel-btn">Cancel</button>
+                <button class="btn-primary" id="forgot-password-send-btn">Send</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript -->
     <!-- Firebase SDK (v8 - CDN) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>

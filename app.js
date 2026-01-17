@@ -377,6 +377,18 @@ function initializeEventListeners() {
             }
         });
     });
+
+    // Forgot password modal buttons
+    document.getElementById('forgot-password-send-btn').addEventListener('click', sendPasswordResetFromModal);
+    document.getElementById('forgot-password-cancel-btn').addEventListener('click', () => {
+        closeModal('forgot-password-modal');
+    });
+    document.getElementById('forgot-password-email').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendPasswordResetFromModal();
+        }
+    });
     
     // Graph unit toggle
     document.getElementById('toggle-lb').addEventListener('click', () => {
@@ -1821,32 +1833,52 @@ function showSignInForm() {
     document.getElementById('authError').style.display = 'none';
 }
 
-async function handleForgotPassword() {
-    const email = document.getElementById('authEmail').value.trim();
-    const authError = document.getElementById('authError');
+function handleForgotPassword() {
+    // Pre-fill email from the auth form if available
+    const authEmail = document.getElementById('authEmail').value.trim();
+    const emailInput = document.getElementById('forgot-password-email');
+    const errorEl = document.getElementById('forgot-password-error');
+
+    emailInput.value = authEmail;
+    errorEl.style.display = 'none';
+    errorEl.className = 'dialog-error';
+
+    openModal('forgot-password-modal');
+    emailInput.focus();
+}
+
+async function sendPasswordResetFromModal() {
+    const email = document.getElementById('forgot-password-email').value.trim();
+    const errorEl = document.getElementById('forgot-password-error');
 
     if (!email) {
-        authError.textContent = 'Please enter your email address first.';
-        authError.style.display = 'block';
+        errorEl.textContent = 'Please enter your email address.';
+        errorEl.className = 'dialog-error';
+        errorEl.style.display = 'block';
         return;
     }
 
     try {
         await auth.sendPasswordResetEmail(email);
-        authError.style.color = '#3F6B52';
-        authError.textContent = 'Password reset email sent! Check your inbox.';
-        authError.style.display = 'block';
+        errorEl.textContent = 'Password reset email sent! Check your inbox.';
+        errorEl.className = 'dialog-success';
+        errorEl.style.display = 'block';
+
+        // Close modal after 2 seconds on success
+        setTimeout(() => {
+            closeModal('forgot-password-modal');
+        }, 2000);
     } catch (error) {
         console.error('❌ Password reset error:', error);
-        authError.style.color = '#BF3143';
+        errorEl.className = 'dialog-error';
         if (error.code === 'auth/user-not-found') {
-            authError.textContent = 'No account found with this email.';
+            errorEl.textContent = 'No account found with this email.';
         } else if (error.code === 'auth/invalid-email') {
-            authError.textContent = 'Please enter a valid email address.';
+            errorEl.textContent = 'Please enter a valid email address.';
         } else {
-            authError.textContent = 'Failed to send reset email. Please try again.';
+            errorEl.textContent = 'Failed to send reset email. Please try again.';
         }
-        authError.style.display = 'block';
+        errorEl.style.display = 'block';
     }
 }
 

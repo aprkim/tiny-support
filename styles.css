@@ -814,6 +814,42 @@ body {
     margin: 0;
 }
 
+.dialog-input {
+    width: 100%;
+    height: 44px;
+    padding: 10px var(--space-md);
+    border: 2px solid var(--border-gray);
+    border-radius: var(--radius-md);
+    font-family: var(--font-main);
+    font-size: 16px;
+    margin-top: var(--space-md);
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: white;
+}
+
+.dialog-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.dialog-error {
+    font-size: 14px;
+    color: #BF3143;
+    margin-top: var(--space-sm);
+    text-align: center;
+}
+
+.dialog-success {
+    font-size: 14px;
+    color: #3F6B52;
+    margin-top: var(--space-sm);
+    text-align: center;
+}
+
 .dialog-actions {
     display: flex;
     gap: var(--space-md);
