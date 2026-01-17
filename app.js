@@ -1965,26 +1965,25 @@ async function handleAuthSubmit() {
     } catch (error) {
         console.error('❌ Auth error:', error.code, error.message);
 
+        // Determine error message
+        let errorMessage = 'An error occurred. Please try again.';
+
         if (error.code === 'auth/email-already-in-use') {
-            authError.textContent = 'This email already has a TinyWins account. Please use Sign In instead.';
-            authError.style.display = 'block';
+            errorMessage = 'This email already has a TinyWins account. Please use Sign In instead.';
         } else if (error.code === 'auth/weak-password') {
-            authError.textContent = 'Password should be at least 6 characters.';
-            authError.style.display = 'block';
+            errorMessage = 'Password should be at least 6 characters.';
         } else if (error.code === 'auth/invalid-email') {
-            authError.textContent = 'Please enter a valid email address.';
-            authError.style.display = 'block';
+            errorMessage = 'Please enter a valid email address.';
         } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-            authError.textContent = 'Invalid email or password.';
-            authError.style.display = 'block';
+            errorMessage = 'Invalid email or password.';
         } else if (error.message && error.message.includes('INVALID_LOGIN_CREDENTIALS')) {
-            authError.textContent = 'Invalid email or password.';
-            authError.style.display = 'block';
-        } else {
-            authError.textContent = 'An error occurred. Please try again.';
-            authError.style.display = 'block';
+            errorMessage = 'Invalid email or password.';
+        } else if (error.code && error.code.includes('auth/')) {
+            errorMessage = 'Invalid email or password.';
         }
 
+        authError.textContent = errorMessage;
+        authError.style.display = 'block';
         authSubmitBtn.disabled = false;
         authSubmitBtn.textContent = isSignInMode ? 'Sign In' : 'Create Account';
     }
