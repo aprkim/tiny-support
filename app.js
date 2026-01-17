@@ -1490,7 +1490,7 @@ async function copySyncCode() {
 }
 
 // Submit sync code from input
-function submitSyncCode() {
+async function submitSyncCode() {
     const input = document.getElementById('enterSyncCodeInput');
     const code = input.value.trim().toLowerCase();
     const linkBtn = document.querySelector('.sync-link-btn');
@@ -1505,6 +1505,20 @@ function submitSyncCode() {
     syncCodeForFirebase = code;
     updateSyncCodeDisplay(code);
     updateSyncPill(true);
+
+    // If user is signed in with email, update their profile with this sync code
+    if (auth.currentUser && !auth.currentUser.isAnonymous) {
+        try {
+            await db.collection('tinyBodyUsers').doc(auth.currentUser.uid).set({
+                email: auth.currentUser.email,
+                syncCode: code,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            console.log('✅ Sync code saved to user profile');
+        } catch (error) {
+            console.error('❌ Failed to save sync code to profile:', error);
+        }
+    }
 
     // Show the sync code card with the entered code
     const card = document.getElementById('syncCodeCard');
