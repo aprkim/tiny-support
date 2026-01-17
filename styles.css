@@ -794,6 +794,10 @@ body {
     text-align: center;
 }
 
+#forgot-password-modal .dialog-body {
+    padding-bottom: var(--space-sm);
+}
+
 .dialog-icon {
     font-size: 48px;
     margin-bottom: var(--space-md);
@@ -836,18 +840,24 @@ body {
     box-shadow: 0 0 0 3px var(--primary-light);
 }
 
-.dialog-error {
+.dialog-error,
+.dialog-success {
     font-size: 14px;
+    margin: var(--space-sm) 0 0 0;
+    padding-left: var(--space-sm);
+    text-align: left;
+    min-height: 20px;
+    line-height: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.dialog-error {
     color: #BF3143;
-    margin-top: var(--space-sm);
-    text-align: center;
 }
 
 .dialog-success {
-    font-size: 14px;
     color: #3F6B52;
-    margin-top: var(--space-sm);
-    text-align: center;
 }
 
 .dialog-actions {
