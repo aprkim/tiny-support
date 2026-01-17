@@ -1395,6 +1395,7 @@ async function confirmDeleteAllData() {
 async function deleteAllData() {
     // Clear localStorage
     localStorage.removeItem('tiny-tweaks-data');
+    localStorage.removeItem('tiny-body-sync-code');
     appData = { days: [], presets: [], exercisePresets: [] };
 
     // Also delete from Firestore if synced
@@ -1407,7 +1408,17 @@ async function deleteAllData() {
         }
     }
 
-    customAlert('All data has been permanently deleted. Refreshing...');
+    // Sign out the user
+    if (auth && auth.currentUser) {
+        try {
+            await auth.signOut();
+            console.log('✅ Signed out user');
+        } catch (error) {
+            console.error('❌ Failed to sign out:', error);
+        }
+    }
+
+    customAlert('All data has been permanently deleted. Signing out...');
     setTimeout(() => {
         location.reload();
     }, 1500);
