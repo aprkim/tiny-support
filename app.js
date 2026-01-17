@@ -1789,11 +1789,14 @@ async function handleAuthSubmit() {
         } else if (error.code === 'auth/invalid-email') {
             authError.textContent = 'Please enter a valid email address.';
             authError.style.display = 'block';
-        } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            authError.textContent = 'Invalid email or password.';
+            authError.style.display = 'block';
+        } else if (error.message && error.message.includes('INVALID_LOGIN_CREDENTIALS')) {
             authError.textContent = 'Invalid email or password.';
             authError.style.display = 'block';
         } else {
-            authError.textContent = error.message || 'An error occurred. Please try again.';
+            authError.textContent = 'An error occurred. Please try again.';
             authError.style.display = 'block';
         }
 
