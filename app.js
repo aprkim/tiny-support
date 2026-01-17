@@ -1859,6 +1859,15 @@ async function sendPasswordResetFromModal() {
     }
 
     try {
+        // First check if user exists
+        const signInMethods = await auth.fetchSignInMethodsForEmail(email);
+        if (signInMethods.length === 0) {
+            errorEl.textContent = 'No account found with this email.';
+            errorEl.className = 'dialog-error';
+            errorEl.style.display = 'block';
+            return;
+        }
+
         await auth.sendPasswordResetEmail(email);
         errorEl.textContent = 'Password reset email sent! Check your inbox.';
         errorEl.className = 'dialog-success';
