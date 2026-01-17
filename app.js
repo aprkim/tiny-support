@@ -188,18 +188,25 @@ function initializeEventListeners() {
     // Weight inputs
     document.getElementById('weight-lb').addEventListener('input', (e) => {
         if (isUpdatingWeight) return;
-        const lb = parseFloat(e.target.value);
+        // Only allow numbers and one decimal place
+        let value = e.target.value.replace(/[^0-9.]/g, '');
+        const parts = value.split('.');
+        if (parts.length > 2) value = parts[0] + '.' + parts.slice(1).join('');
+        if (parts[1] && parts[1].length > 1) value = parts[0] + '.' + parts[1].charAt(0);
+        if (value !== e.target.value) e.target.value = value;
+
+        const lb = parseFloat(value);
         if (!isNaN(lb) && lb >= 0) {
             isUpdatingWeight = true;
             const kg = lbToKg(lb);
             document.getElementById('weight-kg').value = kg;
-            
+
             const day = getOrCreateDayData(currentDate);
             day.weightLb = lb;
             day.weightKg = kg;
             saveData();
             isUpdatingWeight = false;
-        } else if (e.target.value === '') {
+        } else if (value === '' || value === '.') {
             document.getElementById('weight-kg').value = '';
             const day = getOrCreateDayData(currentDate);
             day.weightLb = null;
@@ -207,21 +214,28 @@ function initializeEventListeners() {
             saveData();
         }
     });
-    
+
     document.getElementById('weight-kg').addEventListener('input', (e) => {
         if (isUpdatingWeight) return;
-        const kg = parseFloat(e.target.value);
+        // Only allow numbers and one decimal place
+        let value = e.target.value.replace(/[^0-9.]/g, '');
+        const parts = value.split('.');
+        if (parts.length > 2) value = parts[0] + '.' + parts.slice(1).join('');
+        if (parts[1] && parts[1].length > 1) value = parts[0] + '.' + parts[1].charAt(0);
+        if (value !== e.target.value) e.target.value = value;
+
+        const kg = parseFloat(value);
         if (!isNaN(kg) && kg >= 0) {
             isUpdatingWeight = true;
             const lb = kgToLb(kg);
             document.getElementById('weight-lb').value = lb;
-            
+
             const day = getOrCreateDayData(currentDate);
             day.weightKg = kg;
             day.weightLb = lb;
             saveData();
             isUpdatingWeight = false;
-        } else if (e.target.value === '') {
+        } else if (value === '' || value === '.') {
             document.getElementById('weight-lb').value = '';
             const day = getOrCreateDayData(currentDate);
             day.weightLb = null;
@@ -1861,14 +1875,6 @@ async function sendPasswordResetFromModal() {
     }
 
     try {
-        // First check if user exists
-        const signInMethods = await auth.fetchSignInMethodsForEmail(email);
-        if (signInMethods.length === 0) {
-            errorEl.textContent = 'No account found with this email.';
-            errorEl.className = 'dialog-error';
-            return;
-        }
-
         await auth.sendPasswordResetEmail(email);
         errorEl.textContent = 'Password reset email sent! Check your inbox.';
         errorEl.className = 'dialog-success';
