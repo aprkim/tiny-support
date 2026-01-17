@@ -1794,28 +1794,35 @@ async function handleAuthSubmit() {
             await auth.signInWithEmailAndPassword(email, password);
             console.log('✅ Signed in successfully');
         } else {
-            // Create new account and link with anonymous account
-            const credential = firebase.auth.EmailAuthProvider.credential(email, password);
-            await auth.currentUser.linkWithCredential(credential);
-            console.log('✅ Account created and linked successfully');
+            // Create new account - try linking first, fallback to createUser
+            if (auth.currentUser && auth.currentUser.isAnonymous) {
+                try {
+                    const credential = firebase.auth.EmailAuthProvider.credential(email, password);
+                    await auth.currentUser.linkWithCredential(credential);
+                    console.log('✅ Account created and linked successfully');
+                } catch (linkError) {
+                    console.log('⚠️ Link failed, trying createUser:', linkError.code);
+                    if (linkError.code === 'auth/email-already-in-use') {
+                        throw linkError; // Re-throw to handle below
+                    }
+                    // Fallback: create new account
+                    await auth.createUserWithEmailAndPassword(email, password);
+                    console.log('✅ Account created successfully');
+                }
+            } else {
+                // No anonymous user, create new account directly
+                await auth.createUserWithEmailAndPassword(email, password);
+                console.log('✅ Account created successfully');
+            }
         }
 
         // Form will be hidden by onAuthStateChanged callback
     } catch (error) {
-        console.error('❌ Auth error:', error);
+        console.error('❌ Auth error:', error.code, error.message);
 
         if (error.code === 'auth/email-already-in-use') {
-            // If email already in use, try signing in instead
-            try {
-                const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                console.log('✅ Signed in with existing account');
-
-                // Transfer data from anonymous account if needed
-                // (The onAuthStateChanged will handle UI update)
-            } catch (signInError) {
-                authError.textContent = 'This email already has a TinyWins account. Please use Sign In instead.';
-                authError.style.display = 'block';
-            }
+            authError.textContent = 'This email already has a TinyWins account. Please use Sign In instead.';
+            authError.style.display = 'block';
         } else if (error.code === 'auth/weak-password') {
             authError.textContent = 'Password should be at least 6 characters.';
             authError.style.display = 'block';
