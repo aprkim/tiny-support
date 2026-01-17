@@ -1370,6 +1370,82 @@ body {
     margin-bottom: var(--space-md);
 }
 
+/* Account Section Styles */
+.account-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.account-btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.account-btn.primary {
+    background: var(--primary);
+    color: white;
+}
+
+.account-btn.primary:hover {
+    background: var(--primary-dark);
+}
+
+.account-btn.secondary {
+    background: #f0f4f3;
+    color: var(--text-dark);
+    border: 1px solid #e2e8f0;
+}
+
+.account-btn.secondary:hover {
+    background: #e2e8f0;
+}
+
+.account-btn.signout {
+    background: #FEF2F2;
+    color: var(--primary);
+}
+
+.account-btn.signout:hover {
+    background: #fde8e8;
+}
+
+.account-form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.account-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    color: var(--text-dark);
+    background: white;
+}
+
+.account-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.account-input::placeholder {
+    color: #9CA3AF;
+}
+
+.account-error {
+    color: var(--primary);
+    font-size: 14px;
+    display: none;
+}
+
 .settings-action-btn {
     width: 100%;
     padding: 12px var(--space-md);

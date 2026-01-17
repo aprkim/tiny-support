@@ -220,7 +220,6 @@
             <!-- Account Section -->
             <div class="settings-section">
                 <div class="settings-section-header">
-                    <i class="fas fa-user"></i>
                     <h3>Account</h3>
                 </div>
 
@@ -228,22 +227,22 @@
                     <!-- Guest Account State -->
                     <div id="guestAccountState" style="display: none;">
                         <p class="settings-section-description">You're using a guest account. Create an account to sync your data across devices.</p>
-                        <div class="sync-input-container">
-                            <button class="sync-link-btn" onclick="showCreateAccountForm()">Create Account</button>
-                            <button class="settings-action-btn" onclick="showSignInForm()">Sign In</button>
+                        <div class="account-buttons">
+                            <button class="account-btn primary" onclick="showCreateAccountForm()">Create Account</button>
+                            <button class="account-btn secondary" onclick="showSignInForm()">Sign In</button>
                         </div>
                     </div>
 
                     <!-- Account Form (Create or Sign In) -->
                     <div id="accountForm" style="display: none;">
                         <p class="settings-section-description" id="accountFormDescription">Create a new account to save your data</p>
-                        <div class="sync-input-container" style="flex-direction: column; gap: 12px;">
-                            <input type="email" id="authEmail" placeholder="Email" style="width: 100%;">
-                            <input type="password" id="authPassword" placeholder="Password" style="width: 100%;">
-                            <div id="authError" style="color: #BF3143; font-size: 14px; display: none;"></div>
-                            <div style="display: flex; gap: 8px; width: 100%;">
-                                <button class="sync-link-btn" id="authSubmitBtn" onclick="handleAuthSubmit()">Create Account</button>
-                                <button class="settings-action-btn" onclick="hideAccountForm()">Cancel</button>
+                        <div class="account-form-container">
+                            <input type="email" id="authEmail" placeholder="Email" class="account-input">
+                            <input type="password" id="authPassword" placeholder="Password" class="account-input">
+                            <div id="authError" class="account-error"></div>
+                            <div class="account-buttons">
+                                <button class="account-btn primary" id="authSubmitBtn" onclick="handleAuthSubmit()">Create Account</button>
+                                <button class="account-btn secondary" onclick="hideAccountForm()">Cancel</button>
                             </div>
                             <p class="settings-section-description" id="authToggleText" style="margin: 0; font-size: 14px;">
                                 Already have an account? <a href="#" onclick="toggleAuthMode(); return false;" style="color: #BF3143; text-decoration: underline;">Sign in</a>
@@ -254,7 +253,7 @@
                     <!-- Signed In State -->
                     <div id="signedInState" style="display: none;">
                         <p class="settings-section-description">Signed in as <span id="userEmail"></span></p>
-                        <button class="settings-action-btn secondary" onclick="handleSignOut()">Sign Out</button>
+                        <button class="account-btn signout" onclick="handleSignOut()">Sign Out</button>
                     </div>
                 </div>
             </div>
