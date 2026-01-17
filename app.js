@@ -1392,9 +1392,21 @@ async function confirmDeleteAllData() {
     }
 }
 
-function deleteAllData() {
+async function deleteAllData() {
+    // Clear localStorage
     localStorage.removeItem('tiny-tweaks-data');
     appData = { days: [], presets: [], exercisePresets: [] };
+
+    // Also delete from Firestore if synced
+    if (firebaseReady && syncCodeForFirebase) {
+        try {
+            await db.collection('tinyBody').doc(syncCodeForFirebase).delete();
+            console.log('✅ Deleted data from Firestore');
+        } catch (error) {
+            console.error('❌ Failed to delete from Firestore:', error);
+        }
+    }
+
     customAlert('All data has been permanently deleted. Refreshing...');
     setTimeout(() => {
         location.reload();
