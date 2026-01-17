@@ -1626,20 +1626,26 @@ try {
     console.log('✅ Firebase initialized');
 
     // Auto sign-in anonymously
-    auth.onAuthStateChanged((user) => {
+    auth.onAuthStateChanged(async (user) => {
         if (user) {
             firebaseReady = true;
-            syncCodeForFirebase = getSyncCode();
 
             console.log('✅ User ID:', user.uid);
-            console.log('🔑 Sync Code:', syncCodeForFirebase);
             console.log('🔐 Is Anonymous:', user.isAnonymous);
 
             // Update UI based on auth state
             updateAuthUI(user);
 
-            if (syncCodeForFirebase) {
-                setupFirebaseSync();
+            if (!user.isAnonymous) {
+                // Signed in with email - check for sync code in user profile
+                await handleEmailUserSync(user);
+            } else {
+                // Anonymous user - use local sync code
+                syncCodeForFirebase = getSyncCode();
+                console.log('🔑 Sync Code (local):', syncCodeForFirebase);
+                if (syncCodeForFirebase) {
+                    setupFirebaseSync();
+                }
             }
         } else {
             auth.signInAnonymously()
@@ -1647,6 +1653,62 @@ try {
                 .catch((err) => console.error('❌ Auth failed:', err));
         }
     });
+
+    // Handle sync for email users
+    async function handleEmailUserSync(user) {
+        const userProfileRef = db.collection('tinyBodyUsers').doc(user.uid);
+
+        try {
+            const profileDoc = await userProfileRef.get();
+            const localSyncCode = getSyncCode();
+
+            if (profileDoc.exists) {
+                // User has a profile - load their sync code
+                const profileData = profileDoc.data();
+                if (profileData.syncCode) {
+                    syncCodeForFirebase = profileData.syncCode;
+                    // Save to localStorage for consistency
+                    localStorage.setItem('tiny-body-sync-code', syncCodeForFirebase);
+                    updateSyncCodeDisplay(syncCodeForFirebase);
+                    updateSyncPill(true);
+                    console.log('🔑 Sync Code (from profile):', syncCodeForFirebase);
+                }
+            } else if (localSyncCode) {
+                // First time signing in with email - save local sync code to profile
+                await userProfileRef.set({
+                    email: user.email,
+                    syncCode: localSyncCode,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                syncCodeForFirebase = localSyncCode;
+                console.log('🔑 Sync Code (saved to profile):', syncCodeForFirebase);
+            } else {
+                // No local sync code - generate one and save
+                const newCode = generateSyncCode();
+                localStorage.setItem('tiny-body-sync-code', newCode);
+                await userProfileRef.set({
+                    email: user.email,
+                    syncCode: newCode,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                syncCodeForFirebase = newCode;
+                updateSyncCodeDisplay(newCode);
+                updateSyncPill(true);
+                console.log('🔑 Sync Code (new, saved to profile):', syncCodeForFirebase);
+            }
+
+            if (syncCodeForFirebase) {
+                setupFirebaseSync();
+            }
+        } catch (error) {
+            console.error('❌ Error handling user sync:', error);
+            // Fallback to local sync code
+            syncCodeForFirebase = localSyncCode || getSyncCode();
+            if (syncCodeForFirebase) {
+                setupFirebaseSync();
+            }
+        }
+    }
 
 } catch (error) {
     console.error('❌ Firebase init failed:', error);
