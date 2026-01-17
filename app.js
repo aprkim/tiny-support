@@ -1685,12 +1685,14 @@ function showCreateAccountForm() {
     const accountFormDescription = document.getElementById('accountFormDescription');
     const authSubmitBtn = document.getElementById('authSubmitBtn');
     const authToggleText = document.getElementById('authToggleText');
+    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
 
     guestAccountState.style.display = 'none';
     accountForm.style.display = 'block';
     accountFormDescription.textContent = 'Create a new account to save your data';
     authSubmitBtn.textContent = 'Create Account';
     authToggleText.innerHTML = 'Already have an account? <a href="#" onclick="toggleAuthMode(); return false;" style="color: #BF3143; text-decoration: underline;">Sign in</a>';
+    if (forgotPasswordLink) forgotPasswordLink.style.display = 'none';
 
     // Clear form
     document.getElementById('authEmail').value = '';
@@ -1705,17 +1707,48 @@ function showSignInForm() {
     const accountFormDescription = document.getElementById('accountFormDescription');
     const authSubmitBtn = document.getElementById('authSubmitBtn');
     const authToggleText = document.getElementById('authToggleText');
+    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
 
     guestAccountState.style.display = 'none';
     accountForm.style.display = 'block';
     accountFormDescription.textContent = 'Sign in to your existing account';
     authSubmitBtn.textContent = 'Sign In';
     authToggleText.innerHTML = 'Don\'t have an account? <a href="#" onclick="toggleAuthMode(); return false;" style="color: #BF3143; text-decoration: underline;">Create one</a>';
+    if (forgotPasswordLink) forgotPasswordLink.style.display = 'block';
 
     // Clear form
     document.getElementById('authEmail').value = '';
     document.getElementById('authPassword').value = '';
     document.getElementById('authError').style.display = 'none';
+}
+
+async function handleForgotPassword() {
+    const email = document.getElementById('authEmail').value.trim();
+    const authError = document.getElementById('authError');
+
+    if (!email) {
+        authError.textContent = 'Please enter your email address first.';
+        authError.style.display = 'block';
+        return;
+    }
+
+    try {
+        await auth.sendPasswordResetEmail(email);
+        authError.style.color = '#3F6B52';
+        authError.textContent = 'Password reset email sent! Check your inbox.';
+        authError.style.display = 'block';
+    } catch (error) {
+        console.error('❌ Password reset error:', error);
+        authError.style.color = '#BF3143';
+        if (error.code === 'auth/user-not-found') {
+            authError.textContent = 'No account found with this email.';
+        } else if (error.code === 'auth/invalid-email') {
+            authError.textContent = 'Please enter a valid email address.';
+        } else {
+            authError.textContent = 'Failed to send reset email. Please try again.';
+        }
+        authError.style.display = 'block';
+    }
 }
 
 function toggleAuthMode() {
