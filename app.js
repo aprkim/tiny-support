@@ -195,6 +195,9 @@ function initializeEventListeners() {
         if (parts[1] && parts[1].length > 1) value = parts[0] + '.' + parts[1].charAt(0);
         if (value !== e.target.value) e.target.value = value;
 
+        // Don't process if value ends with a period (user is still typing)
+        if (value.endsWith('.')) return;
+
         const lb = parseFloat(value);
         if (!isNaN(lb) && lb >= 0) {
             isUpdatingWeight = true;
@@ -206,7 +209,7 @@ function initializeEventListeners() {
             day.weightKg = kg;
             saveData();
             isUpdatingWeight = false;
-        } else if (value === '' || value === '.') {
+        } else if (value === '') {
             document.getElementById('weight-kg').value = '';
             const day = getOrCreateDayData(currentDate);
             day.weightLb = null;
@@ -223,6 +226,9 @@ function initializeEventListeners() {
         if (parts.length > 2) value = parts[0] + '.' + parts.slice(1).join('');
         if (parts[1] && parts[1].length > 1) value = parts[0] + '.' + parts[1].charAt(0);
         if (value !== e.target.value) e.target.value = value;
+
+        // Don't process if value ends with a period (user is still typing)
+        if (value.endsWith('.')) return;
 
         const kg = parseFloat(value);
         if (!isNaN(kg) && kg >= 0) {
