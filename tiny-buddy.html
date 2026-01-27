@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiny Buddy - Focus Together</title>
+    <style>
+        :root {
+            --radius: 16px;
+            --max: 980px;
+            --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+
+            --bg: #F7FAFC;
+            --card: #FFFFFF;
+            --soft: #F0F4F3;
+            --border: #E2E8F0;
+
+            --text: #1E293B;
+            --muted: #64748B;
+            --muted2: #9CA3AF;
+
+            --accent: #BF3143;
+            --accentSoft: rgba(191,49,67,.08);
+            --accentHover: rgba(191,49,67,.14);
+            --accentBorder: rgba(191,49,67,.18);
+
+            --successBg: #E8F4ED;
+            --successBorder: #A6C5A3;
+            --successText: #324252;
+
+            --disabledBg: #F3F4F6;
+            --disabledBorder: #E5E7EB;
+            --disabledText: #6B7280;
+
+            --overlay: rgba(30, 41, 59, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--sans);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Entry Screen */
+        .entry-screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .entry-container {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .entry-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .entry-header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .entry-header p {
+            font-size: 15px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .entry-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 14px;
+            font-size: 15px;
+            font-family: var(--sans);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--card);
+            color: var(--text);
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(191,49,67,.15);
+        }
+
+        .input-group input::placeholder {
+            color: var(--muted2);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 24px 0;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .divider span {
+            font-size: 12px;
+            color: var(--muted2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: 500;
+            font-family: var(--sans);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #FFFFFF;
+        }
+
+        .btn-primary:hover {
+            background: #a82a3a;
+        }
+
+        .btn-primary:disabled {
+            background: var(--disabledBg);
+            color: var(--disabledText);
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--soft);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .join-section {
+            margin-top: 16px;
+        }
+
+        .join-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .join-row input {
+            flex: 1;
+        }
+
+        .join-row .btn {
+            width: auto;
+            padding: 12px 20px;
+        }
+
+        .error-message {
+            margin-top: 12px;
+            padding: 10px 14px;
+            background: var(--accentSoft);
+            border: 1px solid var(--accentBorder);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--accent);
+            display: none;
+        }
+
+        .error-message.visible {
+            display: block;
+        }
+
+        /* Room Full Overlay */
+        .room-full-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--overlay);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .room-full-overlay.visible {
+            display: flex;
+        }
+
+        .room-full-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 32px 40px;
+            text-align: center;
+            max-width: 360px;
+            margin: 24px;
+        }
+
+        .room-full-card h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .room-full-card p {
+            font-size: 14px;
+            color: var(--muted);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .room-full-card .btn {
+            width: auto;
+            padding: 12px 28px;
+        }
+
+        /* Room Screen */
+        .room-screen {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+            background: #0f1419;
+        }
+
+        .room-screen.active {
+            display: flex;
+        }
+
+        .entry-screen.hidden {
+            display: none;
+        }
+
+        /* Room Header */
+        .room-header {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .room-code-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .room-code-label {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .room-code-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #FFFFFF;
+            font-family: ui-monospace, monospace;
+            letter-spacing: 0.5px;
+            background: rgba(255,255,255,0.1);
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        .copy-btn {
+            background: none;
+            border: none;
+            padding: 6px;
+            cursor: pointer;
+            color: rgba(255,255,255,0.5);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.8);
+        }
+
+        .copy-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .copy-btn.copied {
+            color: var(--successBorder);
+        }
+
+        .room-status {
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .room-status.has-buddy {
+            color: var(--successBorder);
+        }
+
+        /* Video Grid */
+        .video-grid {
+            flex: 1;
+            display: flex;
+            gap: 4px;
+            padding: 4px;
+            min-height: 0;
+        }
+
+        /* Desktop: horizontal split */
+        @media (min-width: 768px) {
+            .video-grid {
+                flex-direction: row;
+            }
+        }
+
+        /* Mobile: vertical stack */
+        @media (max-width: 767px) {
+            .video-grid {
+                flex-direction: column;
+            }
+        }
+
+        .video-tile {
+            flex: 1;
+            position: relative;
+            background: #1a1f26;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 0;
+        }
+
+        .video-tile video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-tile.local video {
+            transform: scaleX(-1);
+        }
+
+        .video-tile .tile-label {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0,0,0,0.6);
+            padding: 6px 12px;
+            border-radius: 8px;
+            backdrop-filter: blur(8px);
+        }
+
+        .tile-label .name {
+            font-size: 13px;
+            color: rgba(255,255,255,0.9);
+            font-weight: 500;
+        }
+
+        .tile-label .audio-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--muted2);
+        }
+
+        .tile-label .audio-icon svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Avatar Fallback (video off but in room) */
+        .avatar-fallback {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .video-tile.video-off .avatar-fallback {
+            display: flex;
+        }
+
+        .video-tile.video-off video {
+            display: none;
+        }
+
+        .avatar-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.85);
+        }
+
+        .avatar-name {
+            font-size: 15px;
+            color: rgba(255,255,255,0.7);
+            font-weight: 500;
+        }
+
+        .video-off-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 4px;
+        }
+
+        .video-off-indicator svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Waiting State (no one joined yet) */
+        .waiting-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            color: rgba(255,255,255,0.25);
+        }
+
+        .waiting-state svg {
+            width: 48px;
+            height: 48px;
+            opacity: 0.2;
+        }
+
+        .waiting-state span {
+            font-size: 13px;
+            font-style: italic;
+        }
+
+        .video-tile.waiting {
+            background: #14181d;
+            border: 1px dashed rgba(255,255,255,0.1);
+        }
+
+        .video-tile.waiting .tile-label {
+            display: none;
+        }
+
+        /* Control Bar */
+        .control-bar {
+            padding: 16px 20px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .control-btn {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+
+        .control-btn svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .control-btn.video-btn {
+            background: rgba(255,255,255,0.15);
+            color: #FFFFFF;
+        }
+
+        .control-btn.video-btn:hover {
+            background: rgba(255,255,255,0.25);
+        }
+
+        .control-btn.video-btn.off {
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.5);
+        }
+
+        .control-btn.leave-btn {
+            background: var(--accent);
+            color: #FFFFFF;
+            margin-left: 20px;
+        }
+
+        .control-btn.leave-btn:hover {
+            background: #a82a3a;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .video-tile {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            .video-tile {
+                animation: none;
+            }
+        }
+    </style>
+    <script src="https://proto2.makedo.com:8883/v02/scripts/protocol.js"></script>
+</head>
+<body>
+    <!-- Entry Screen -->
+    <div class="entry-screen" id="entryScreen">
+        <div class="entry-container">
+            <div class="entry-header">
+                <h1>Tiny Buddy</h1>
+                <p>Focus together, silently. Just turn on video and work alongside your buddy.</p>
+            </div>
+
+            <div class="entry-card">
+                <div class="input-group">
+                    <label for="userName">Your name</label>
+                    <input type="text" id="userName" placeholder="Enter your name" maxlength="30">
+                </div>
+
+                <button class="btn btn-primary" id="createRoomBtn">Start a Room</button>
+
+                <div class="divider"><span>or</span></div>
+
+                <div class="join-section">
+                    <div class="input-group" style="margin-bottom: 12px;">
+                        <label for="roomCode">Join with room code</label>
+                        <div class="join-row">
+                            <input type="text" id="roomCode" placeholder="Enter code" maxlength="20">
+                            <button class="btn btn-secondary" id="joinRoomBtn">Join</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Room Screen -->
+    <div class="room-screen" id="roomScreen">
+        <div class="room-header">
+            <div class="room-code-display">
+                <span class="room-code-label">Room</span>
+                <span class="room-code-value" id="displayRoomCode">-----</span>
+                <button class="copy-btn" id="copyCodeBtn" title="Copy room code">
+                    <svg id="copyIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    <svg id="checkIcon" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </button>
+            </div>
+            <div class="room-status" id="roomStatus">Waiting for buddy...</div>
+        </div>
+
+        <div class="video-grid">
+            <!-- Local Video Tile -->
+            <div class="video-tile local" id="localTile">
+                <video id="localVideo" autoplay muted playsinline></video>
+                <div class="avatar-fallback">
+                    <div class="avatar-circle" id="localInitials">?</div>
+                    <div class="avatar-name" id="localAvatarName">You</div>
+                    <div class="video-off-indicator">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"></path>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                        <span>Camera off</span>
+                    </div>
+                </div>
+                <div class="tile-label">
+                    <span class="name" id="localName">You</span>
+                    <span class="audio-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                            <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path>
+                            <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Remote Video Tile -->
+            <div class="video-tile remote waiting" id="remoteTile">
+                <video id="remoteVideo" autoplay playsinline></video>
+                <div class="avatar-fallback">
+                    <div class="avatar-circle" id="remoteInitials">?</div>
+                    <div class="avatar-name" id="remoteAvatarName">Buddy</div>
+                    <div class="video-off-indicator">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"></path>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                        <span>Camera off</span>
+                    </div>
+                </div>
+                <div class="waiting-state" id="waitingState">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>Waiting for your buddy...</span>
+                </div>
+                <div class="tile-label">
+                    <span class="name" id="remoteName">Buddy</span>
+                    <span class="audio-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                            <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path>
+                            <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-bar">
+            <button class="control-btn video-btn" id="videoToggle" title="Toggle video">
+                <svg id="videoOnIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                </svg>
+                <svg id="videoOffIcon" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+            </button>
+
+            <button class="control-btn leave-btn" id="leaveBtn" title="Leave room">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Room Full Overlay -->
+    <div class="room-full-overlay" id="roomFullOverlay">
+        <div class="room-full-card">
+            <h2>Room is Full</h2>
+            <p>This focus room only supports 2 people.</p>
+            <button class="btn btn-primary" id="roomFullBackBtn">Start a New Room</button>
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "minichat-core": "https://proto2.makedo.com:8883/v02/scripts/minichat-core.js",
+            "config": "https://proto2.makedo.com:8883/v02/scripts/configServer.js"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import MiniChatCore from 'minichat-core';
+
+        // Context credentials
+        const CONTEXT_CONFIG = {
+            contextId: 'Kw6w6w6w6w',
+            contextAuthToken: 'Kw6w6w6w6w'
+        };
+
+        // Create chat instance
+        const chat = new MiniChatCore(CONTEXT_CONFIG);
+
+        // State
+        let localUsername = '';
+        let videoEnabled = true;
+        let remoteMemberId = null;
+        let currentRoomCode = '';
+
+        // DOM Elements
+        const entryScreen = document.getElementById('entryScreen');
+        const roomScreen = document.getElementById('roomScreen');
+        const userNameInput = document.getElementById('userName');
+        const roomCodeInput = document.getElementById('roomCode');
+        const createRoomBtn = document.getElementById('createRoomBtn');
+        const joinRoomBtn = document.getElementById('joinRoomBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const displayRoomCode = document.getElementById('displayRoomCode');
+        const roomStatus = document.getElementById('roomStatus');
+        const localTile = document.getElementById('localTile');
+        const remoteTile = document.getElementById('remoteTile');
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const videoToggle = document.getElementById('videoToggle');
+        const leaveBtn = document.getElementById('leaveBtn');
+        const videoOnIcon = document.getElementById('videoOnIcon');
+        const videoOffIcon = document.getElementById('videoOffIcon');
+        const localName = document.getElementById('localName');
+        const localInitials = document.getElementById('localInitials');
+        const localAvatarName = document.getElementById('localAvatarName');
+        const remoteName = document.getElementById('remoteName');
+        const remoteInitials = document.getElementById('remoteInitials');
+        const remoteAvatarName = document.getElementById('remoteAvatarName');
+        const waitingState = document.getElementById('waitingState');
+
+        // Helper: Get initials from name
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
+        }
+
+        // Helper: Show error
+        function showError(msg) {
+            errorMessage.textContent = msg;
+            errorMessage.classList.add('visible');
+            setTimeout(() => errorMessage.classList.remove('visible'), 4000);
+        }
+
+        // Helper: Switch to room screen
+        function showRoomScreen() {
+            entryScreen.classList.add('hidden');
+            roomScreen.classList.add('active');
+        }
+
+        // Helper: Switch to entry screen
+        function showEntryScreen() {
+            roomScreen.classList.remove('active');
+            entryScreen.classList.remove('hidden');
+            errorMessage.classList.remove('visible');
+        }
+
+        // Helper: Update local tile info
+        function updateLocalInfo() {
+            localName.textContent = localUsername || 'You';
+            localInitials.textContent = getInitials(localUsername || 'You');
+            localAvatarName.textContent = localUsername || 'You';
+        }
+
+        // Helper: Update video toggle UI
+        function updateVideoToggleUI() {
+            if (videoEnabled) {
+                videoOnIcon.style.display = 'block';
+                videoOffIcon.style.display = 'none';
+                videoToggle.classList.remove('off');
+                localTile.classList.remove('video-off');
+            } else {
+                videoOnIcon.style.display = 'none';
+                videoOffIcon.style.display = 'block';
+                videoToggle.classList.add('off');
+                localTile.classList.add('video-off');
+            }
+        }
+
+        // Setup event handlers
+        chat.setLocalVideoElement(localVideo);
+
+        chat.onJoined = async () => {
+            // Check if room is full (more than 1 other person) BEFORE showing room
+            const memberIds = chat.getMemberIds();
+            if (memberIds.length > 1) {
+                // Room is full - show message and leave (never show room screen)
+                showRoomFullMessage();
+                return;
+            }
+
+            // Room has space - now show the room screen
+            displayRoomCode.textContent = currentRoomCode || chat.currentRoomCode || '-----';
+            showRoomScreen();
+            localTile.classList.remove('video-off');
+
+            // Re-bind local video element to ensure it receives the stream
+            chat.setLocalVideoElement(localVideo);
+
+            // Start video immediately, keep audio off
+            await chat.toggleVideo();
+        };
+
+        chat.onLeft = () => {
+            showEntryScreen();
+            remoteMemberId = null;
+            currentRoomCode = '';
+            displayRoomCode.textContent = '-----';
+            remoteTile.classList.add('waiting');
+            waitingState.style.display = 'flex';
+            roomStatus.textContent = 'Waiting for buddy...';
+            roomStatus.classList.remove('has-buddy');
+        };
+
+        chat.onMemberJoined = (memberId) => {
+            const member = chat.getMember(memberId);
+            remoteMemberId = memberId;
+
+            const username = member?.username || 'Buddy';
+
+            // Update status
+            roomStatus.textContent = `${username} is here`;
+            roomStatus.classList.add('has-buddy');
+
+            // Update remote tile to show buddy's avatar (even before video starts)
+            remoteName.textContent = username;
+            remoteInitials.textContent = getInitials(username);
+            remoteAvatarName.textContent = username;
+
+            // Hide waiting state, show video-off state (avatar)
+            remoteTile.classList.remove('waiting');
+            remoteTile.classList.add('video-off');
+            waitingState.style.display = 'none';
+        };
+
+        chat.onMemberLeft = (memberId) => {
+            if (memberId === remoteMemberId) {
+                remoteMemberId = null;
+
+                // Reset tile to waiting state
+                remoteTile.classList.add('waiting');
+                remoteTile.classList.remove('video-off');
+                waitingState.style.display = 'flex';
+                remoteVideo.srcObject = null;
+
+                // Update status
+                roomStatus.textContent = 'Waiting for buddy...';
+                roomStatus.classList.remove('has-buddy');
+            }
+        };
+
+        chat.onMemberStreamStart = (memberId, streamType) => {
+            if (streamType === 'camera') {
+                const member = chat.getMember(memberId);
+                remoteMemberId = memberId;
+
+                // Update remote tile info
+                remoteName.textContent = member?.username || 'Buddy';
+                remoteInitials.textContent = getInitials(member?.username || 'Buddy');
+                remoteAvatarName.textContent = member?.username || 'Buddy';
+
+                // Show video, hide waiting state
+                remoteTile.classList.remove('waiting');
+                remoteTile.classList.remove('video-off');
+                waitingState.style.display = 'none';
+
+                // Attach stream
+                chat.setMemberVideoElement(memberId, streamType, remoteVideo);
+            }
+        };
+
+        chat.onMemberStreamEnd = (memberId, streamType) => {
+            if (memberId === remoteMemberId && streamType === 'camera') {
+                remoteTile.classList.add('video-off');
+            }
+        };
+
+        chat.onMemberMediaChange = (memberId, streamType) => {
+            if (memberId === remoteMemberId && streamType === 'camera') {
+                const states = chat.getMemberMediaStates(memberId);
+                if (states?.cam_video_detail === 'HIDDEN' || states?.cam_video_detail === 'OFF') {
+                    remoteTile.classList.add('video-off');
+                } else {
+                    remoteTile.classList.remove('video-off');
+                }
+            }
+        };
+
+        chat.onLocalMediaChange = () => {
+            const state = chat.localMediaState;
+            videoEnabled = state.video && !state.videoMuted;
+            updateVideoToggleUI();
+        };
+
+        chat.onError = (context, error) => {
+            console.error(`Error in ${context}:`, error);
+            showError(error.message || 'Something went wrong');
+        };
+
+        // Create Room
+        createRoomBtn.addEventListener('click', async () => {
+            localUsername = userNameInput.value.trim();
+            if (!localUsername) {
+                showError('Please enter your name');
+                return;
+            }
+
+            createRoomBtn.disabled = true;
+            createRoomBtn.textContent = 'Creating...';
+
+            try {
+                await chat.signupAnonymous(localUsername);
+                const channel = await chat.createChannel({
+                    title: `${localUsername}'s Focus Room`,
+                    allowsGuests: true
+                });
+
+                // Store the room code for display
+                currentRoomCode = channel.pid;
+                displayRoomCode.textContent = currentRoomCode;
+
+                await chat.joinByCode(channel.pid);
+
+                updateLocalInfo();
+                // Room screen will be shown in onJoined after capacity check
+
+                await chat.join();
+            } catch (e) {
+                showError(e.message);
+            } finally {
+                createRoomBtn.disabled = false;
+                createRoomBtn.textContent = 'Start a Room';
+            }
+        });
+
+        // Join Room
+        joinRoomBtn.addEventListener('click', async () => {
+            localUsername = userNameInput.value.trim();
+            const code = roomCodeInput.value.trim();
+
+            if (!localUsername) {
+                showError('Please enter your name');
+                return;
+            }
+            if (!code) {
+                showError('Please enter a room code');
+                return;
+            }
+
+            joinRoomBtn.disabled = true;
+            joinRoomBtn.textContent = 'Joining...';
+
+            try {
+                await chat.signupAnonymous(localUsername);
+
+                // Store the room code for display
+                currentRoomCode = code;
+                displayRoomCode.textContent = currentRoomCode;
+
+                await chat.joinByCode(code);
+
+                updateLocalInfo();
+                // Room screen will be shown in onJoined after capacity check
+
+                await chat.join();
+            } catch (e) {
+                showError(e.message);
+            } finally {
+                joinRoomBtn.disabled = false;
+                joinRoomBtn.textContent = 'Join';
+            }
+        });
+
+        // Video Toggle
+        videoToggle.addEventListener('click', () => {
+            chat.toggleVideo();
+        });
+
+        // Leave Room
+        leaveBtn.addEventListener('click', () => {
+            chat.exitChannel();
+            videoEnabled = true;
+            updateVideoToggleUI();
+        });
+
+        // Room Full Overlay
+        const roomFullOverlay = document.getElementById('roomFullOverlay');
+        const roomFullBackBtn = document.getElementById('roomFullBackBtn');
+
+        function showRoomFullMessage() {
+            chat.exitChannel();
+            // Room screen was never shown, just show the overlay
+            roomFullOverlay.classList.add('visible');
+        }
+
+        roomFullBackBtn.addEventListener('click', () => {
+            roomFullOverlay.classList.remove('visible');
+            showEntryScreen();
+        });
+
+        // Copy Room Code
+        const copyCodeBtn = document.getElementById('copyCodeBtn');
+        const copyIcon = document.getElementById('copyIcon');
+        const checkIcon = document.getElementById('checkIcon');
+
+        copyCodeBtn.addEventListener('click', async () => {
+            const code = displayRoomCode.textContent;
+            if (code && code !== '-----') {
+                try {
+                    await navigator.clipboard.writeText(code);
+
+                    // Show check icon briefly
+                    copyIcon.style.display = 'none';
+                    checkIcon.style.display = 'block';
+                    copyCodeBtn.classList.add('copied');
+
+                    setTimeout(() => {
+                        copyIcon.style.display = 'block';
+                        checkIcon.style.display = 'none';
+                        copyCodeBtn.classList.remove('copied');
+                    }, 2000);
+                } catch (e) {
+                    console.error('Failed to copy:', e);
+                }
+            }
+        });
+
+        // Enter key support
+        userNameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !roomCodeInput.value.trim()) {
+                createRoomBtn.click();
+            }
+        });
+
+        roomCodeInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                joinRoomBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>

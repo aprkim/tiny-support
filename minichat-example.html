@@ -1,0 +1,527 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <title>MiniChat - Pedagogical Example</title>
+    <style>
+        /* Minimal styling - just enough to be usable */
+        body { font-family: sans-serif; padding: 20px; max-width: 1100px; margin: 0 auto; }
+        section { border: 1px solid #ccc; padding: 15px; margin: 10px 0; }
+        section h3 { margin-top: 0; color: #333; }
+        button { padding: 8px 16px; margin: 4px; cursor: pointer; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        input, select { padding: 8px; margin: 4px; width: 180px; }
+        video { background: #000; max-width: 300px; height: 200px; }
+        .video-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+        .video-tile { position: relative; }
+        .video-tile label { position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; font-size: 12px; }
+        .video-tile .media-state { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; font-size: 10px; }
+        .on { color: #4f4; }
+        .muted { color: #ff4; }
+        .off { color: #f44; }
+        #log { background: #f5f5f5; padding: 10px; height: 150px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+        .hidden { display: none; }
+        
+        /* 3-block entry layout */
+        .entry-row { display: flex; gap: 15px; flex-wrap: wrap; }
+        .entry-block { flex: 1; min-width: 280px; border: 1px solid #ccc; padding: 15px; }
+        .entry-block h3 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        .entry-block input { display: block; margin: 6px 0; }
+        .entry-block button { margin-top: 10px; }
+        .entry-block .status { font-size: 12px; margin-top: 8px; min-height: 20px; }
+        .room-code { font-family: monospace; font-size: 18px; font-weight: bold; color: #2563eb; }
+    </style>
+<script src="https://proto2.makedo.com:8883/v02/scripts/protocol.js"></script></head>
+<body>
+    <h1>🎥 MiniChat Example</h1>
+    <p><em>A minimal example showing how little JS is needed with MiniChatCore</em></p>
+
+    <!-- ============ SECTION 1: THREE ENTRY OPTIONS ============ -->
+    <div id="entrySection" class="entry-row">
+        
+        <!-- Block 1: Login with existing account -->
+        <div class="entry-block">
+            <h3>🔐 Login</h3>
+            <p>Use existing account:</p>
+            <input type="email" id="loginEmail" placeholder="Email">
+            <input type="password" id="loginPassword" placeholder="Password">
+            <button onclick="loginExisting()">Login</button>
+            <div class="status" id="loginStatus"></div>
+        </div>
+        
+        <!-- Block 2: Create a new room -->
+        <div class="entry-block">
+            <h3>🏠 Create Room</h3>
+            <p>Start a new room as guest:</p>
+            <input type="text" id="createUsername" placeholder="Your Name">
+            <input type="text" id="createRoomTitle" placeholder="Room Title">
+            <button onclick="createRoom()">Create Room</button>
+            <div class="status" id="createStatus"></div>
+        </div>
+        
+        <!-- Block 3: Join existing room by code -->
+        <div class="entry-block">
+            <h3>🚪 Join Room</h3>
+            <p>Join an existing room by code:</p>
+            <input type="text" id="joinUsername" placeholder="Your Name">
+            <input type="text" id="joinRoomCode" placeholder="Room Code">
+            <button onclick="joinRoom()">Join Room</button>
+            <div class="status" id="joinStatus"></div>
+        </div>
+    </div>
+
+    <!-- ============ SECTION 2: CHANNEL & USER SELECT (for logged-in users) ============ -->
+    <div id="selectionRow" class="hidden" style="display: none; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
+        <section id="channelSection">
+            <h3>2. Select Channel</h3>
+            <select id="channelSelect"><option value="">-- Select Channel --</option></select>
+            <button onclick="selectChannel()">Select</button>
+            <button onclick="logout()">Logout</button>
+        </section>
+
+        <section id="userSection">
+            <h3>2b. Or Select User (Quick Chat)</h3>
+            <select id="userSelect"><option value="">-- Select User --</option></select>
+            <button onclick="selectUser()">Chat</button>
+        </section>
+    </div>
+
+    <!-- ============ SECTION 3: MEDIA CONTROLS ============ -->
+    <section id="mediaSection" class="hidden">
+        <h3>3. Local Media</h3>
+        <div class="video-grid">
+            <div class="video-tile">
+                <video id="localVideo" autoplay="" muted="" playsinline=""></video>
+                <label>You</label>
+            </div>
+        </div>
+        <div style="margin-top: 10px;">
+            <button onclick="chat.toggleAudio()">Toggle Audio</button>
+            <button onclick="chat.toggleVideo()">Toggle Video</button>
+            <button onclick="chat.toggleScreencast()">Toggle Screen</button>
+            <button onclick="chat.toggleMuteAudio()">Mute/Unmute Mic</button>
+            <button onclick="chat.toggleMuteVideo()">Hide/Show Video</button>
+        </div>
+        <p>Audio: <span id="audioState">OFF</span> | Video: <span id="videoState">OFF</span> | Screen: <span id="screenState">OFF</span></p>
+    </section>
+
+    <!-- ============ SECTION 4: JOIN CHANNEL ============ -->
+    <section id="joinSection" class="hidden">
+        <h3>4. Join Channel</h3>
+        <button onclick="chat.join()" id="joinBtn">Join Channel</button>
+        <button onclick="chat.leave()" id="leaveBtn" disabled="">Leave Channel</button>
+        <button onclick="chat.exitChannel()" id="exitBtn" disabled="">Exit Channel</button>
+        <span id="channelStatus"></span>
+        <div id="roomCodeDisplay" style="margin-top: 10px; display: none;">
+            Share this code: <span class="room-code" id="currentRoomCode"></span>
+        </div>
+    </section>
+
+    <!-- ============ SECTION 5: REMOTE MEMBERS ============ -->
+    <section id="membersSection" class="hidden">
+        <h3>5. Remote Members</h3>
+        <button onclick="showMembers()">Get Members</button>
+        <div id="remoteVideos" class="video-grid"></div>
+    </section>
+
+    <!-- ============ LOG OUTPUT ============ -->
+    <section>
+        <h3>Event Log</h3>
+        <div id="log">[2:02:11 PM] Ready. Login, create a room, or join with a code.<br></div>
+    </section>
+
+    <!-- ============ THE JAVASCRIPT - Notice how minimal it is! ============ -->
+
+    <script type="importmap">
+    {
+        "imports": {
+            "minichat-core": "https://proto2.makedo.com:8883/v02/scripts/minichat-core.js",
+            "config": "https://proto2.makedo.com:8883/v02/scripts/configServer.js"
+        }
+    }
+    </script>
+<!--
+    <script type="importmap">
+    {
+        "imports": {
+            "minichat-core": "./scripts/minichat-core.js",
+            "config": "./scripts/configLocal.js"
+        }
+    }
+    </script>
+-->
+
+    <script type="module">
+        import MiniChatCore from 'minichat-core';
+
+        // Context credentials for anonymous signups (get yours from makedo.com/developers)
+        const CONTEXT_CONFIG = {
+            contextId: 'Kw6w6w6w6w', // server/local test context
+            contextAuthToken: 'Kw6w6w6w6w'
+        };
+
+        // Create the chat instance (globally accessible for onclick handlers)
+        window.chat = new MiniChatCore(CONTEXT_CONFIG);
+
+        // Track remote video tiles
+        const remoteTiles = new Map();
+
+        // ============ SETUP EVENT HANDLERS ============
+        
+        // Give the core our local video element - it manages srcObject automatically
+        chat.setLocalVideoElement(document.getElementById('localVideo'));
+
+        // Login events (for regular login flow)
+        chat.onLogin = (user) => {
+            log(`✓ Logged in as ${user.email || user.username || 'anonymous'}`);
+        };
+
+        // Channels loaded - populate dropdown
+        chat.onChannelsLoaded = (channels) => {
+            const select = document.getElementById('channelSelect');
+            select.innerHTML = '<option value="">-- Select Channel --</option>';
+            channels.forEach(ch => {
+                select.innerHTML += `<option value="${ch.id}">${ch.title || 'Untitled'}</option>`;
+            });
+            log(`Loaded ${channels.length} channels`);
+        };
+
+        // Users loaded - populate dropdown
+        chat.onUsersLoaded = (users) => {
+            const select = document.getElementById('userSelect');
+            select.innerHTML = '<option value="">-- Select User --</option>';
+            users.forEach(u => {
+                select.innerHTML += `<option value="${u.pid}">${u.username || 'Unknown'}</option>`;
+            });
+            log(`Loaded ${users.length} users`);
+        };
+
+        // Channel selected - show media controls
+        chat.onChannelSelected = (channel) => {
+            log(`Selected: ${channel.title}`);
+            show('mediaSection');
+            show('joinSection');
+            show('membersSection');
+        };
+
+        // Joined channel
+        chat.onJoined = () => {
+            log('✓ Joined channel - you are LIVE');
+            document.getElementById('joinBtn').disabled = true;
+            document.getElementById('leaveBtn').disabled = false;
+            document.getElementById('exitBtn').disabled = false;
+            document.getElementById('channelStatus').textContent = '🔴 LIVE';
+            
+            // Show room code for sharing
+            const roomCode = chat.currentRoomCode;
+            if (roomCode) {
+                document.getElementById('currentRoomCode').textContent = roomCode;
+                document.getElementById('roomCodeDisplay').style.display = 'block';
+            }
+        };
+
+        // Left channel
+        chat.onLeft = () => {
+            log('Left channel');
+            document.getElementById('joinBtn').disabled = false;
+            document.getElementById('leaveBtn').disabled = true;
+            document.getElementById('exitBtn').disabled = true;
+            document.getElementById('channelStatus').textContent = '';
+            document.getElementById('roomCodeDisplay').style.display = 'none';
+            clearRemoteTiles();
+        };
+
+        // Local media changed - update UI
+        chat.onLocalMediaChange = () => {
+            const state = chat.localMediaState;
+            const screen = chat.screencastState;
+            document.getElementById('audioState').textContent = state.audio ? (state.audioMuted ? 'MUTED' : 'ON') : 'OFF';
+            document.getElementById('videoState').textContent = state.video ? (state.videoMuted ? 'HIDDEN' : 'ON') : 'OFF';
+            document.getElementById('screenState').textContent = screen.video ? (screen.videoMuted ? 'HIDDEN' : 'ON') : 'OFF';
+        };
+
+        // New member joined
+        chat.onMemberJoined = (memberId) => {
+            const member = chat.getMember(memberId);
+            log(`Member joined: ${member?.username || memberId}`);
+        };
+
+        // Member left
+        chat.onMemberLeft = (memberId) => {
+            const member = chat.getMember(memberId);
+            log(`Member left: ${member?.username || memberId}`);
+            removeRemoteTile(memberId);
+        };
+
+        // Member started streaming - THIS IS THE KEY PATTERN
+        chat.onMemberStreamStart = (memberId, streamType) => {
+            const member = chat.getMember(memberId);
+            log(`Stream started: ${member?.username} (${streamType})`);
+            
+            // Create a video element for this member
+            const video = createRemoteTile(memberId, streamType, member?.username);
+            
+            // Register it with the core - core auto-attaches the stream!
+            chat.setMemberVideoElement(memberId, streamType, video);
+        };
+
+        // Member stopped streaming
+        chat.onMemberStreamEnd = (memberId, streamType) => {
+            log(`Stream ended: ${memberId} (${streamType})`);
+            removeRemoteTile(memberId, streamType);
+        };
+
+        // Member media state changed (mute/unmute)
+        chat.onMemberMediaChange = (memberId, streamType) => {
+            updateRemoteTileState(memberId, streamType);
+        };
+
+        // Errors
+        chat.onError = (context, error) => {
+            log(`❌ Error in ${context}: ${error.message}`);
+        };
+
+        // ============ SIMPLE FUNCTIONS FOR BUTTONS ============
+
+        // Block 1: Login with existing account
+        window.loginExisting = async function() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const status = document.getElementById('loginStatus');
+            
+            if (!email || !password) {
+                status.textContent = '❌ Email and password required';
+                return;
+            }
+            
+            status.textContent = 'Logging in...';
+            try {
+                await chat.login(email, password);
+                await chat.loadChannels();
+                await chat.loadUsers();
+                hideEntrySection();
+                showSelectionRow();
+            } catch (e) {
+                status.textContent = '❌ ' + e.message;
+            }
+        };
+        
+        // Block 2: Create a new room (anonymous)
+        window.createRoom = async function() {
+            const username = document.getElementById('createUsername').value;
+            const roomTitle = document.getElementById('createRoomTitle').value;
+            const status = document.getElementById('createStatus');
+            
+            if (!username) {
+                status.textContent = '❌ Please enter your name';
+                return;
+            }
+            
+            status.textContent = 'Creating room...';
+            try {
+                // Sign up as anonymous user
+                await chat.signupAnonymous(username);
+                log(`✓ Signed up as anonymous: ${username}`);
+                
+                // Create a new channel
+                const channel = await chat.createChannel({ 
+                    title: roomTitle || `${username}'s Room`,
+                    allowsGuests: true 
+                });
+                log(`✓ Created room: ${channel.title}`);
+                
+                // Show room code
+                status.innerHTML = `Room code: <span class="room-code">${channel.pid}</span>`;
+                
+                // Join the channel
+                await chat.joinByCode(channel.pid);
+                log(`✓ Joined room with code: ${channel.pid}`);
+                
+                // Go directly to media section (skip channel select)
+                hideEntrySection();
+                show('mediaSection');
+                show('joinSection');
+                show('membersSection');
+                
+            } catch (e) {
+                status.textContent = '❌ ' + e.message;
+                log(`❌ Create room error: ${e.message}`);
+            }
+        };
+        
+        // Block 3: Join existing room by code (anonymous)
+        window.joinRoom = async function() {
+            const username = document.getElementById('joinUsername').value;
+            const roomCode = document.getElementById('joinRoomCode').value.trim();
+            const status = document.getElementById('joinStatus');
+            
+            if (!username) {
+                status.textContent = '❌ Please enter your name';
+                return;
+            }
+            if (!roomCode) {
+                status.textContent = '❌ Please enter room code';
+                return;
+            }
+            
+            status.textContent = 'Joining room...';
+            try {
+                // Sign up as anonymous user
+                await chat.signupAnonymous(username);
+                log(`✓ Signed up as anonymous: ${username}`);
+                
+                // Join by room code
+                await chat.joinByCode(roomCode);
+                log(`✓ Joined room with code: ${roomCode}`);
+                
+                status.textContent = '✓ Joined!';
+                
+                // Go directly to media section (skip channel select)
+                hideEntrySection();
+                show('mediaSection');
+                show('joinSection');
+                show('membersSection');
+                
+            } catch (e) {
+                status.textContent = '❌ ' + e.message;
+                log(`❌ Join room error: ${e.message}`);
+            }
+        };
+
+        window.selectChannel = async function() {
+            const channelId = document.getElementById('channelSelect').value;
+            if (!channelId) return alert('Please select a channel');
+            
+            await chat.selectChannel(channelId);
+        };
+
+        window.selectUser = async function() {
+            const userId = document.getElementById('userSelect').value;
+            if (!userId) return alert('Please select a user');
+            
+            await chat.selectUser(userId);
+        };
+
+        window.logout = function() {
+            chat.logout();
+            showEntrySection();
+            hideSelectionRow();
+            hide('mediaSection');
+            hide('joinSection');
+            hide('membersSection');
+            clearRemoteTiles();
+        };
+
+        window.showMembers = function() {
+            const memberIds = chat.getMemberIds();
+            log(`Current members: ${memberIds.length}`);
+            memberIds.forEach(id => {
+                const m = chat.getMember(id);
+                log(`  - ${m.username} (camera: ${m.hasCamera}, screen: ${m.hasScreencast})`);
+            });
+        };
+
+        // ============ HELPER FUNCTIONS ============
+
+        function createRemoteTile(memberId, streamType, username) {
+            const container = document.getElementById('remoteVideos');
+            const tileId = `${memberId}-${streamType}`;
+            
+            // Don't create duplicate
+            if (document.getElementById(tileId)) {
+                return document.getElementById(tileId).querySelector('video');
+            }
+            
+            const tile = document.createElement('div');
+            tile.className = 'video-tile';
+            tile.id = tileId;
+            
+            const video = document.createElement('video');
+            video.autoplay = true;
+            video.playsInline = true;
+            
+            const label = document.createElement('label');
+            label.textContent = `${username || 'Unknown'} (${streamType})`;
+            
+            // Media state indicator
+            const stateEl = document.createElement('div');
+            stateEl.className = 'media-state';
+            stateEl.innerHTML = '🎤 <span class="audio">...</span> 📹 <span class="video">...</span>';
+            
+            tile.appendChild(video);
+            tile.appendChild(label);
+            tile.appendChild(stateEl);
+            container.appendChild(tile);
+            
+            remoteTiles.set(tileId, tile);
+            
+            // Update state immediately
+            updateRemoteTileState(memberId, streamType);
+            
+            return video;
+        }
+
+        function updateRemoteTileState(memberId, streamType) {
+            const tileId = `${memberId}-${streamType}`;
+            const tile = document.getElementById(tileId);
+            if (!tile) return;
+            
+            const states = chat.getMemberMediaStates(memberId);
+            if (!states) return;
+            
+            const audioKey = streamType === 'camera' ? 'cam_audio_detail' : 'screen_audio_detail';
+            const videoKey = streamType === 'camera' ? 'cam_video_detail' : 'screen_video_detail';
+            
+            const audioEl = tile.querySelector('.media-state .audio');
+            const videoEl = tile.querySelector('.media-state .video');
+            
+            if (audioEl) {
+                audioEl.textContent = states[audioKey] || 'OFF';
+                audioEl.className = 'audio ' + (states[audioKey] === 'ON' ? 'on' : states[audioKey] === 'MUTED' ? 'muted' : 'off');
+            }
+            if (videoEl) {
+                videoEl.textContent = states[videoKey] || 'OFF';
+                videoEl.className = 'video ' + (states[videoKey] === 'ON' ? 'on' : states[videoKey] === 'HIDDEN' ? 'muted' : 'off');
+            }
+        }
+
+        function removeRemoteTile(memberId, streamType = null) {
+            if (streamType) {
+                const tileId = `${memberId}-${streamType}`;
+                const tile = remoteTiles.get(tileId);
+                if (tile) {
+                    chat.clearMemberVideoElement(memberId, streamType);
+                    tile.remove();
+                    remoteTiles.delete(tileId);
+                }
+            } else {
+                // Remove all tiles for this member
+                ['camera', 'screencast'].forEach(st => removeRemoteTile(memberId, st));
+            }
+        }
+
+        function clearRemoteTiles() {
+            remoteTiles.forEach((tile, key) => {
+                const [memberId, streamType] = key.split('-');
+                chat.clearMemberVideoElement(memberId, streamType);
+                tile.remove();
+            });
+            remoteTiles.clear();
+        }
+
+        function show(id) { document.getElementById(id).classList.remove('hidden'); }
+        function hide(id) { document.getElementById(id).classList.add('hidden'); }
+        function showSelectionRow() { document.getElementById('selectionRow').style.display = 'flex'; }
+        function hideSelectionRow() { document.getElementById('selectionRow').style.display = 'none'; }
+        function hideEntrySection() { document.getElementById('entrySection').classList.add('hidden'); }
+        function showEntrySection() { document.getElementById('entrySection').classList.remove('hidden'); }
+        function log(msg) {
+            const logEl = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            logEl.innerHTML += `[${time}] ${msg}<br>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        log('Ready. Login, create a room, or join with a code.');
+    </script>
+
+
+</body></html>
