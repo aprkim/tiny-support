@@ -1,4 +1,7 @@
-<html lang="en"><head>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
     <meta charset="UTF-8">
     <title>MiniChat - Pedagogical Example</title>
     <style>
@@ -29,7 +32,7 @@
         .entry-block .status { font-size: 12px; margin-top: 8px; min-height: 20px; }
         .room-code { font-family: monospace; font-size: 18px; font-weight: bold; color: #2563eb; }
     </style>
-<script src="https://proto2.makedo.com:8883/v02/scripts/protocol.js"></script></head>
+</head>
 <body>
     <h1>🎥 MiniChat Example</h1>
     <p><em>A minimal example showing how little JS is needed with MiniChatCore</em></p>
@@ -89,7 +92,7 @@
         <h3>3. Local Media</h3>
         <div class="video-grid">
             <div class="video-tile">
-                <video id="localVideo" autoplay="" muted="" playsinline=""></video>
+                <video id="localVideo" autoplay muted playsinline></video>
                 <label>You</label>
             </div>
         </div>
@@ -105,11 +108,10 @@
 
     <!-- ============ SECTION 4: JOIN CHANNEL ============ -->
     <section id="joinSection" class="hidden">
-        <h3>4. Join Channel</h3>
+        <h3>4. Join Channel <span id="channelStatus"></span></h3>
         <button onclick="chat.join()" id="joinBtn">Join Channel</button>
-        <button onclick="chat.leave()" id="leaveBtn" disabled="">Leave Channel</button>
-        <button onclick="chat.exitChannel()" id="exitBtn" disabled="">Exit Channel</button>
-        <span id="channelStatus"></span>
+        <button onclick="chat.returnToLobby()" id="leaveBtn" disabled>Return to Lobby</button>
+        <button onclick="exitChannelFully()" id="exitBtn" disabled>Exit Channel</button>
         <div id="roomCodeDisplay" style="margin-top: 10px; display: none;">
             Share this code: <span class="room-code" id="currentRoomCode"></span>
         </div>
@@ -125,11 +127,12 @@
     <!-- ============ LOG OUTPUT ============ -->
     <section>
         <h3>Event Log</h3>
-        <div id="log">[2:02:11 PM] Ready. Login, create a room, or join with a code.<br></div>
+        <div id="log"></div>
     </section>
 
     <!-- ============ THE JAVASCRIPT - Notice how minimal it is! ============ -->
 
+   
     <script type="importmap">
     {
         "imports": {
@@ -137,7 +140,7 @@
             "config": "https://proto2.makedo.com:8883/v02/scripts/configServer.js"
         }
     }
-    </script>
+    </script> 
 <!--
     <script type="importmap">
     {
@@ -156,6 +159,8 @@
         const CONTEXT_CONFIG = {
             contextId: 'Kw6w6w6w6w', // server/local test context
             contextAuthToken: 'Kw6w6w6w6w'
+            //contextId: 'Ktest02', // server/local test context
+            //contextAuthToken: 'Ktest02'
         };
 
         // Create the chat instance (globally accessible for onclick handlers)
@@ -194,12 +199,53 @@
             log(`Loaded ${users.length} users`);
         };
 
-        // Channel selected - show media controls
-        chat.onChannelSelected = (channel) => {
+        // Channel selected - show media controls and create member tiles
+        chat.onChannelSelected = async (channel) => {
             log(`Selected: ${channel.title}`);
             show('mediaSection');
             show('joinSection');
             show('membersSection');
+            
+            // Clear any existing tiles
+            clearRemoteTiles();
+            
+            // ALWAYS fetch fresh channel data - cached data from loadChannels() might be stale
+            log('Fetching fresh channel data with updated member statuses...');
+            let freshChannel;
+            try {
+                freshChannel = await chat.getChannelById(channel.id);
+                log(`Fresh data fetched - ${freshChannel.members?.length || 0} members`);
+            } catch (error) {
+                log(`⚠️ Could not fetch fresh channel data, using cached: ${error.message}`);
+                freshChannel = channel; // Fallback to cached
+            }
+            
+            // Get all members (including self) from fresh channel data
+            let members = freshChannel.members || [];
+            
+            if (members.length === 0) {
+                // If channel.members is empty, fetch via getMembers API
+                log('No members in channel data, fetching via getMembers...');
+                members = await chat.getCurrentChannelMembers();
+            }
+            
+            // Create tiles for ALL members (including self) using actual status from member data
+            members.forEach(member => {
+                const isLocal = member.id === chat.currentMemberId;
+                const displayName = isLocal ? 'You' : (member.local_name || member.user?.username || 'Unknown');
+                const displayStatus = chat.getDisplayStatus(member.status);
+                
+                createMemberPlaceholder(member.id, displayName, displayStatus, isLocal);
+                
+                if (isLocal) {
+                    log(`Your status: ${member.status} (${displayStatus})`);
+                }
+            });
+            
+            log(`Created ${members.length} member placeholders with current statuses`);
+            
+            // Show LOBBY status when entering channel
+            document.getElementById('channelStatus').textContent = '👥 LOBBY';
         };
 
         // Joined channel
@@ -218,15 +264,17 @@
             }
         };
 
-        // Left channel
+        // Left channel - keep member grid visible for quick rejoin
         chat.onLeft = () => {
-            log('Left channel');
+            log('Returned to lobby - member grid still visible');
             document.getElementById('joinBtn').disabled = false;
             document.getElementById('leaveBtn').disabled = true;
-            document.getElementById('exitBtn').disabled = true;
-            document.getElementById('channelStatus').textContent = '';
+            document.getElementById('exitBtn').disabled = false;  // Can still exit fully
+            document.getElementById('channelStatus').textContent = '👥 LOBBY';
             document.getElementById('roomCodeDisplay').style.display = 'none';
-            clearRemoteTiles();
+            
+            // DON'T clear member tiles - keep them visible for quick rejoin
+            // Just hide video streams (will happen automatically via onMemberStreamEnd)
         };
 
         // Local media changed - update UI
@@ -238,35 +286,123 @@
             document.getElementById('screenState').textContent = screen.video ? (screen.videoMuted ? 'HIDDEN' : 'ON') : 'OFF';
         };
 
-        // New member joined
+        // New member joined - create placeholder tile immediately
         chat.onMemberJoined = (memberId) => {
             const member = chat.getMember(memberId);
             log(`Member joined: ${member?.username || memberId}`);
+            
+            // Create placeholder tile for the new member
+            const displayName = member?.local_name || member?.user_username || member?.username || 'Unknown';
+            const displayStatus = member?.member_status ? chat.getDisplayStatus(member.member_status) : 'INACTIVE';
+            
+            createMemberPlaceholder(memberId, displayName, displayStatus, false);
         };
 
-        // Member left
+        // Member update (status changes, profile updates, etc.)
+        chat.onMemberUpdate = (memberId) => {
+            const member = chat.getMember(memberId);
+            if (!member) return;
+            
+            const isSelf = memberId === chat.currentMemberId;
+            log(`Member update: ${member.username || memberId}${isSelf ? ' (you)' : ''}`);
+            
+            const tileId = `tile-${memberId}-camera`;
+            const tile = document.getElementById(tileId);
+            
+            if (!tile) {
+                // Member doesn't have a tile yet - create one
+                const displayName = member.local_name || member.user_username || member.username || 'Unknown';
+                const displayStatus = member.member_status ? chat.getDisplayStatus(member.member_status) : 'INACTIVE';
+                log(`Creating tile for updated member: ${displayName} (${displayStatus})`);
+                createMemberPlaceholder(memberId, displayName, displayStatus, isSelf);
+            } else {
+                // Update existing tile's status badge
+                const statusBadge = tile.querySelector('.status-badge');
+                if (statusBadge && member.member_status) {
+                    const displayStatus = chat.getDisplayStatus(member.member_status);
+                    statusBadge.textContent = displayStatus;
+                    log(`Updated status badge for ${member.username}: ${displayStatus}`);
+                }
+            }
+        };
+
+        // Member left LIVE state (stopped WebRTC streaming)
+        // NOTE: This does NOT mean they left the channel - they may have returned to LOBBY
+        // Check their status to decide whether to remove the tile
         chat.onMemberLeft = (memberId) => {
             const member = chat.getMember(memberId);
-            log(`Member left: ${member?.username || memberId}`);
-            removeRemoteTile(memberId);
+            log(`Member left LIVE: ${member?.username || memberId}`);
+            
+            // Check if member is still in channel (in lobby) or fully exited
+            const status = chat.getDisplayStatus(member?.member_status);
+            
+            if (status === 'LOBBY') {
+                // Member returned to lobby - keep tile visible with LOBBY badge
+                // Video is already hidden by MiniChatCore
+                log(`${member.username} is now in lobby - keeping tile`);
+            } else {
+                // Member fully exited (INACTIVE status) - remove tile
+                log(`${member.username} fully exited, removing tile`);
+                removeRemoteTile(memberId);
+            }
         };
 
-        // Member started streaming - THIS IS THE KEY PATTERN
+        // Member started streaming - show video in existing tile
         chat.onMemberStreamStart = (memberId, streamType) => {
             const member = chat.getMember(memberId);
             log(`Stream started: ${member?.username} (${streamType})`);
             
-            // Create a video element for this member
-            const video = createRemoteTile(memberId, streamType, member?.username);
+            const tileId = `tile-${memberId}-${streamType}`;
+            let tile = document.getElementById(tileId);
             
-            // Register it with the core - core auto-attaches the stream!
-            chat.setMemberVideoElement(memberId, streamType, video);
+            // If tile doesn't exist (late-joining member), create it first
+            if (!tile) {
+                const displayStatus = member?.member_status ? chat.getDisplayStatus(member.member_status) : 'INACTIVE';
+                createMemberPlaceholder(memberId, member?.username, displayStatus, false);
+                tile = document.getElementById(tileId);
+            }
+            
+            if (tile) {
+                const placeholder = tile.querySelector('.placeholder-content');
+                const video = tile.querySelector('video');
+                const label = tile.querySelector('label');
+                const stateEl = tile.querySelector('.media-state');
+                
+                // Show video elements, hide placeholder
+                if (placeholder) placeholder.style.display = 'none';
+                if (video) video.style.display = 'block';
+                if (label) label.style.display = 'block';
+                if (stateEl) stateEl.style.display = 'block';
+                
+                // Register video element with core - auto-attaches stream
+                if (video) {
+                    chat.setMemberVideoElement(memberId, streamType, video);
+                }
+                
+                // Update media state
+                updateRemoteTileState(memberId, streamType);
+            }
         };
 
-        // Member stopped streaming
+        // Member stopped streaming - hide video, show placeholder
         chat.onMemberStreamEnd = (memberId, streamType) => {
             log(`Stream ended: ${memberId} (${streamType})`);
-            removeRemoteTile(memberId, streamType);
+            
+            const tileId = `tile-${memberId}-${streamType}`;
+            const tile = document.getElementById(tileId);
+            
+            if (tile) {
+                const placeholder = tile.querySelector('.placeholder-content');
+                const video = tile.querySelector('video');
+                const label = tile.querySelector('label');
+                const stateEl = tile.querySelector('.media-state');
+                
+                // Hide video elements, show placeholder
+                if (video) video.style.display = 'none';
+                if (label) label.style.display = 'none';
+                if (stateEl) stateEl.style.display = 'none';
+                if (placeholder) placeholder.style.display = 'flex';
+            }
         };
 
         // Member media state changed (mute/unmute)
@@ -329,11 +465,11 @@
                 log(`✓ Created room: ${channel.title}`);
                 
                 // Show room code
-                status.innerHTML = `Room code: <span class="room-code">${channel.pid}</span>`;
+                status.innerHTML = `Room code: <span class="room-code">${channel.room_code}</span>`;
                 
                 // Join the channel
-                await chat.joinByCode(channel.pid);
-                log(`✓ Joined room with code: ${channel.pid}`);
+                await chat.joinByRoomCode(channel.room_code);
+                log(`✓ Joined room with code: ${channel.room_code}`);
                 
                 // Go directly to media section (skip channel select)
                 hideEntrySection();
@@ -369,8 +505,9 @@
                 log(`✓ Signed up as anonymous: ${username}`);
                 
                 // Join by room code
-                await chat.joinByCode(roomCode);
+                await chat.joinByRoomCode(roomCode);
                 log(`✓ Joined room with code: ${roomCode}`);
+                log(`✓ Room title: ${chat.selectedChannel?.title || 'Unknown'}`);
                 
                 status.textContent = '✓ Joined!';
                 
@@ -409,6 +546,22 @@
             hide('membersSection');
             clearRemoteTiles();
         };
+        
+        window.exitChannelFully = function() {
+            log('Exiting channel fully - clearing members');
+            chat.exitChannel();
+            
+            // Clear member tiles and hide sections
+            clearRemoteTiles();
+            hide('mediaSection');
+            hide('joinSection');
+            hide('membersSection');
+            
+            // Reset buttons
+            document.getElementById('joinBtn').disabled = false;
+            document.getElementById('leaveBtn').disabled = true;
+            document.getElementById('exitBtn').disabled = true;
+        };
 
         window.showMembers = function() {
             const memberIds = chat.getMemberIds();
@@ -420,6 +573,89 @@
         };
 
         // ============ HELPER FUNCTIONS ============
+
+        /**
+         * Create a placeholder tile for a member (shown before/without video stream)
+         * @param {string} memberId - Member ID
+         * @param {string} username - Display name
+         * @param {string} status - Display status (ACTIVE, LOBBY, INACTIVE)
+         * @param {boolean} isLocal - True if this is the local user
+         */
+        function createMemberPlaceholder(memberId, username, status, isLocal) {
+            const container = document.getElementById('remoteVideos');
+            const tileId = `tile-${memberId}-camera`;
+            
+            // Don't create duplicate
+            if (document.getElementById(tileId)) {
+                return;
+            }
+            
+            const tile = document.createElement('div');
+            tile.className = 'video-tile';
+            tile.id = tileId;
+            tile.dataset.memberId = memberId;
+            tile.style.cssText = 'width: 300px; height: 200px; position: relative;';
+            
+            // Placeholder content (visible when no video)
+            const placeholder = document.createElement('div');
+            placeholder.className = 'placeholder-content';
+            placeholder.style.cssText = 'position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px;';
+            
+            // Initials
+            const initials = document.createElement('div');
+            initials.style.cssText = 'font-size: 48px; font-weight: bold; margin-bottom: 8px;';
+            initials.textContent = getInitials(username);
+            
+            // Name
+            const nameEl = document.createElement('div');
+            nameEl.style.cssText = 'font-size: 16px; margin-bottom: 4px;';
+            nameEl.textContent = isLocal ? 'You' : username;
+            
+            // Status badge
+            const statusBadge = document.createElement('div');
+            statusBadge.className = 'status-badge';
+            statusBadge.style.cssText = 'font-size: 12px; padding: 4px 8px; background: rgba(255,255,255,0.2); border-radius: 4px;';
+            statusBadge.textContent = status;
+            statusBadge.dataset.status = status;
+            
+            placeholder.appendChild(initials);
+            placeholder.appendChild(nameEl);
+            placeholder.appendChild(statusBadge);
+            
+            // Video element (hidden initially)
+            const video = document.createElement('video');
+            video.autoplay = true;
+            video.playsInline = true;
+            video.muted = isLocal;
+            video.style.cssText = 'position: absolute; inset: 0; width: 100%; height: 100%; display: none; background: #000;';
+            
+            // Label overlay (for video)
+            const label = document.createElement('label');
+            label.textContent = `${isLocal ? 'You' : username} (camera)`;
+            label.style.display = 'none';
+            
+            // Media state indicator (for video)
+            const stateEl = document.createElement('div');
+            stateEl.className = 'media-state';
+            stateEl.innerHTML = '🎤 <span class="audio">...</span> 📹 <span class="video">...</span>';
+            stateEl.style.display = 'none';
+            
+            tile.appendChild(placeholder);
+            tile.appendChild(video);
+            tile.appendChild(label);
+            tile.appendChild(stateEl);
+            
+            container.appendChild(tile);
+        }
+        
+        function getInitials(name) {
+            if (!name) return '?';
+            const parts = name.trim().split(' ');
+            if (parts.length >= 2) {
+                return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+            }
+            return name.substring(0, 2).toUpperCase();
+        }
 
         function createRemoteTile(memberId, streamType, username) {
             const container = document.getElementById('remoteVideos');
@@ -460,7 +696,7 @@
         }
 
         function updateRemoteTileState(memberId, streamType) {
-            const tileId = `${memberId}-${streamType}`;
+            const tileId = `tile-${memberId}-${streamType}`;
             const tile = document.getElementById(tileId);
             if (!tile) return;
             
@@ -499,12 +735,22 @@
         }
 
         function clearRemoteTiles() {
+            // Clear video element references
             remoteTiles.forEach((tile, key) => {
-                const [memberId, streamType] = key.split('-');
-                chat.clearMemberVideoElement(memberId, streamType);
-                tile.remove();
+                const parts = key.split('-');
+                if (parts.length >= 3) {
+                    const memberId = parts[1];
+                    const streamType = parts[2];
+                    chat.clearMemberVideoElement(memberId, streamType);
+                }
             });
             remoteTiles.clear();
+            
+            // Clear all tiles from DOM (including placeholder-only tiles not in remoteTiles)
+            const container = document.getElementById('remoteVideos');
+            if (container) {
+                container.innerHTML = '';
+            }
         }
 
         function show(id) { document.getElementById(id).classList.remove('hidden'); }
@@ -522,6 +768,5 @@
 
         log('Ready. Login, create a room, or join with a code.');
     </script>
-
-
-</body></html>
+</body>
+</html>

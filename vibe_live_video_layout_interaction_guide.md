@@ -27,7 +27,50 @@ This guide focuses on:
 
 ---
 
-## 2. Core Live Room Actions (Required)
+## 2. Entry Screen Pattern (Default)
+
+The entry screen should use **separated cards** for clarity:
+
+### 2.1 Card Structure
+
+```
+┌─────────────────────────────┐
+│  Name Card                  │
+│  ┌───────────────────────┐  │
+│  │ Your name             │  │
+│  │ [___________________] │  │
+│  └───────────────────────┘  │
+└─────────────────────────────┘
+
+┌─────────────────────────────┐
+│  Action Card                │
+│                             │
+│  [ Start a Room ]  (primary)│
+│                             │
+│  ────────── OR ──────────   │
+│                             │
+│  Join with room code        │
+│  [_________] [ Join ]       │
+│                             │
+└─────────────────────────────┘
+```
+
+### 2.2 Dynamic Button Priority
+
+- **No room code entered**: "Start a Room" = primary (accent color), "Join" = secondary
+- **Room code entered**: "Join" = primary (accent color), "Start a Room" = secondary
+
+This guides users naturally toward the most relevant action.
+
+### 2.3 URL Deep Linking
+
+If a room code is in the URL (`?code=XXXXX`):
+- Auto-fill the room code input
+- Swap button priority to emphasize "Join"
+
+---
+
+## 3. Core Live Room Actions (Required)
 
 Every VibeLive-powered room must support the following actions:
 
@@ -42,9 +85,9 @@ Every VibeLive-powered room must support the following actions:
 
 ---
 
-## 3. Video Tile Rules (Universal)
+## 4. Video Tile Rules (Universal)
 
-### 3.1 Video Tile Anatomy
+### 4.1 Video Tile Anatomy
 Each participant tile includes:
 - Live video OR fallback avatar
 - Name (bottom-left, muted text)
@@ -55,16 +98,16 @@ Each participant tile includes:
 
 ---
 
-## 4. Auto Layout Logic (Default Behavior)
+## 5. Auto Layout Logic (Default Behavior)
 
 When the user does **not** specify layout preferences, apply the following rules.
 
-### 4.1 1 Participant
+### 5.1 1 Participant
 - Full screen video
 - Centered
 - No grid
 
-### 4.2 2 Participants
+### 5.2 2 Participants
 
 **Desktop / Tablet (Landscape)**
 - Two equal tiles
@@ -76,7 +119,7 @@ When the user does **not** specify layout preferences, apply the following rules
 - Each tile ~50% height
 
 
-### 4.3 3 Participants
+### 5.3 3 Participants
 
 **Desktop**
 - One large tile (top)
@@ -87,7 +130,7 @@ When the user does **not** specify layout preferences, apply the following rules
 - Active speaker slightly emphasized
 
 
-### 4.4 4 Participants
+### 5.4 4 Participants
 
 **All Devices**
 - 2 × 2 grid
@@ -95,7 +138,7 @@ When the user does **not** specify layout preferences, apply the following rules
 - Maximize screen usage
 
 
-### 4.5 5–6 Participants
+### 5.5 5–6 Participants
 
 **Desktop**
 - 3 × 2 grid
@@ -105,7 +148,7 @@ When the user does **not** specify layout preferences, apply the following rules
 - Remaining users accessible via swipe / pagination
 
 
-### 4.6 7+ Participants
+### 5.6 7+ Participants
 
 - Grid with paging
 - Active speaker auto-emphasized
@@ -113,7 +156,7 @@ When the user does **not** specify layout preferences, apply the following rules
 
 ---
 
-## 5. Active Speaker Logic (Soft Emphasis)
+## 6. Active Speaker Logic (Soft Emphasis)
 
 By default:
 - Detect active speaker via audio
@@ -128,7 +171,7 @@ Examples:
 
 ---
 
-## 6. Screen Share Priority Rules
+## 7. Screen Share Priority Rules
 
 When screen sharing starts:
 
@@ -143,7 +186,7 @@ When screen sharing stops:
 
 ---
 
-## 7. Video Off / Audio Off States
+## 8. Video Off / Audio Off States
 
 ### Video Off
 - Replace video with:
@@ -157,7 +200,42 @@ When screen sharing stops:
 
 ---
 
-## 8. Controls Placement
+## 9. Room Code Sharing (Invite Flow)
+
+*Include this section when users can invite others by sharing a room code or link. Skip if the app uses fixed rooms, calendar invites, or backend-managed access.*
+
+### 9.1 Room Header Display
+
+When in a room, display the room code with **two sharing options**:
+
+```
+┌──────────────────────────────────────────────────┐
+│  Room  [ABC123]  [📋]  [🔗]         Status       │
+└──────────────────────────────────────────────────┘
+         ↑          ↑     ↑
+         Code    Copy   Share Link
+```
+
+### 9.2 Sharing Actions
+
+| Button | Action | Feedback |
+|--------|--------|----------|
+| Copy Code (📋) | Copy room code to clipboard | Checkmark icon briefly |
+| Share Link (🔗) | Copy full URL with `?code=` param | Checkmark icon briefly |
+
+### 9.3 Visual Feedback
+
+- On copy success: swap icon to checkmark for 2 seconds
+- Use subtle color change (e.g., success green)
+- No intrusive toast notifications
+
+This gives users **two intuitive ways** to invite guests:
+1. Share just the code (for voice/text conversations)
+2. Share the full link (for instant click-to-join)
+
+---
+
+## 10. Controls Placement
 
 ### Primary Controls (Always Visible)
 - Mic toggle
@@ -176,7 +254,7 @@ When screen sharing stops:
 
 ---
 
-## 9. Motion & Transitions (WOW Factor)
+## 11. Motion & Transitions (WOW Factor)
 
 Use motion sparingly but intentionally:
 
@@ -192,7 +270,7 @@ Motion should feel *alive, not noisy*.
 
 ---
 
-## 10. Accessibility & Comfort
+## 12. Accessibility & Comfort
 
 - Never rely on color alone for state
 - Ensure readable names at small sizes
@@ -201,10 +279,13 @@ Motion should feel *alive, not noisy*.
 
 ---
 
-## 11. AI Instruction Summary (TL;DR for Builders)
+## 13. AI Instruction Summary (TL;DR for Builders)
 
 When designing with VibeLive:
 
+- **Entry screen**: Use separated cards (Name card + Action card with dynamic button priority)
+- **Room sharing**: Always show both copy code AND share link buttons
+- **URL deep linking**: Auto-fill room code from URL params, swap button priority
 - If the user does not specify layout → choose the most human, balanced option
 - Keep participant tiles visually equal by default
 - Optimize for mobile first, enhance for desktop
@@ -213,8 +294,9 @@ When designing with VibeLive:
 
 ---
 
-**Version:** 1.0.0  
-**Brand:** VibeLive  
-**Audience:** AI builders & product teams creating video chat experiences  
+**Version:** 1.1.1
+**Last Updated:** 2026-01-27 23:15 PST
+**Brand:** VibeLive
+**Audience:** AI builders & product teams creating video chat experiences
 **Goal:** Effortless, stunning live communication without configuration fatigue
 

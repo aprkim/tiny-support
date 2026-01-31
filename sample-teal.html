@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>VibeLive Teal Theme – Color Palette Preview</title>
+  <style>
+    :root{
+      --radius: 16px;
+      --max: 980px;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+
+      /* surfaces */
+      --bg: #f7f9f8;
+      --card: #ffffff;
+      --soft: #f0f4f3;
+      --border: #e2e8f0;
+      --borderSoft: #dbe2ea;
+
+      /* text */
+      --text: #1e293b;
+      --muted: #64748b;
+      --muted2: #9ca3af;
+
+      /* brand */
+      --accent: #0EA5A4;
+      --accentHover: #0d9488;
+      --accentSoft: rgba(14,165,164,.10);
+      --accentBorder: rgba(14,165,164,.35);
+
+      /* status */
+      --liveBg: #e8f4ed;
+      --liveBorder: #a6c5a3;
+      --liveText: #324252;
+
+      --disabledBg: #f3f4f6;
+      --disabledBorder: #e5e7eb;
+      --disabledText: #6b7280;
+
+      /* overlay */
+      --overlay: rgba(30, 41, 59, 0.5);
+    }
+
+    *{ box-sizing: border-box; }
+    body{
+      margin: 0;
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap{
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 28px 16px 48px;
+    }
+    header{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    h1{
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: .2px;
+    }
+    .sub{
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .chip{
+      border-radius: 999px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      background: var(--soft);
+      font-size: 12px;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    section{ margin-top: 16px; }
+    .grid{
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 12px;
+    }
+    @media (max-width: 720px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .swatch{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .color{
+      height: 74px;
+      border-bottom: 1px solid var(--border);
+    }
+    .meta{
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .left{
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .name{
+      font-size: 13px;
+      font-weight: 650;
+    }
+    .desc{
+      font-size: 12px;
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 6px 8px;
+      border-radius: 10px;
+      background: var(--soft);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    /* color blocks */
+    .bg{ background: var(--bg); }
+    .card{ background: var(--card); }
+    .soft{ background: var(--soft); }
+    .border{ background: var(--border); }
+    .borderSoft{ background: var(--borderSoft); }
+
+    .text{ background: var(--text); }
+    .muted{ background: var(--muted); }
+    .muted2{ background: var(--muted2); }
+
+    .accent{ background: var(--accent); }
+    .accentHover{ background: var(--accentHover); }
+    .accentSoft{
+      background: linear-gradient(0deg, var(--accentSoft), var(--accentSoft));
+    }
+    .accentBorder{
+      background: linear-gradient(0deg, var(--accentBorder), var(--accentBorder));
+    }
+
+    .liveBg{ background: var(--liveBg); }
+    .liveBorder{ background: var(--liveBorder); }
+    .liveText{ background: var(--liveText); }
+
+    .disabledBg{ background: var(--disabledBg); }
+    .disabledBorder{ background: var(--disabledBorder); }
+    .disabledText{ background: var(--disabledText); }
+
+    .overlay{
+      background: var(--overlay);
+    }
+
+    footer{
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 0 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>VibeLive Teal Theme – Default Color Tokens</h1>
+        <p class="sub">Simple preview of the palette swatches (surfaces, text, accent, status).</p>
+      </div>
+      <span class="chip">Accent: #0EA5A4</span>
+    </header>
+
+    <section>
+      <div class="grid">
+        <!-- Surfaces -->
+        <div class="swatch">
+          <div class="color bg"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--bg</div>
+              <div class="desc">Main page background</div>
+            </div>
+            <div class="code">#f7f9f8</div>
+          </div>
+        </div>
+
+        <div class="swatch">
+          <div class="color card"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--card</div>
+              <div class="desc">Cards, panels, modals</div>
+            </div>
+            <div class="code">#ffffff</div>
+          </div>
+        </div>
+
+        <div class="swatch">
+          <div class="color soft"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--soft</div>
+              <div class="desc">Hover surfaces, subtle fill</div>
+            </div>
+            <div class="code">#f0f4f3</div>
+          </div>
+        </div>
+
+        <div class="swatch">
+          <div class="color border"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--border</div>
+              <div class="desc">Default borders</div>
+            </div>
+            <div class="code">#e2e8f0</div>
+          </div>
+        </div>
+
+        <div class="swatch">
+          <div class="color borderSoft"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--borderSoft</div>
+              <div class="desc">Hover/emphasis borders</div>
+            </div>
+            <div class="code">#dbe2ea</div>
+          </div>
+        </div>
+
+        <!-- Text -->
+        <div class="swatch">
+          <div class="color text"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--text</div>
+              <div class="desc">Primary text</div>
+            </div>
+            <div class="code">#1e293b</div>
+          </div>
+        </div>
+
+        <div class="swatch">
+          <div class="color muted"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--muted</div>
+              <div class="desc">Secondary text</div>
+            </div>
+            <div class="code">#64748b</div>
+          </div>
+        </div>
+
+        <div class="swatch">
+          <div class="color muted2"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--muted2</div>
+              <div class="desc">Tertiary/help text</div>
+            </div>
+            <div class="code">#9ca3af</div>
+          </div>
+        </div>
+
+        <!-- Accent -->
+        <div class="swatch">
+          <div class="color accent"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--accent</div>
+              <div class="desc">Primary buttons, key links</div>
+            </div>
+            <div class="code">#0EA5A4</div>
+          </div>
+        </div>
+
+        <div class="swatch">
+          <div class="color accentHover"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--accentHover</div>
+              <div class="desc">Hover state</div>
+            </div>
+            <div class="code">#0d9488</div>
+          </div>
+        </div>
+
+        <div class="swatch">
+          <div class="color accentSoft"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--accentSoft</div>
+              <div class="desc">Subtle highlights</div>
+            </div>
+            <div class="code">rgba(14,165,164,.10)</div>
+          </div>
+        </div>
+
+        <div class="swatch">
+          <div class="color accentBorder"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--accentBorder</div>
+              <div class="desc">Focus/outline</div>
+            </div>
+            <div class="code">rgba(14,165,164,.35)</div>
+          </div>
+        </div>
+
+        <!-- Live -->
+        <div class="swatch">
+          <div class="color liveBg"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--liveBg</div>
+              <div class="desc">Live badge background</div>
+            </div>
+            <div class="code">#e8f4ed</div>
+          </div>
+        </div>
+
+        <div class="swatch">
+          <div class="color liveBorder"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--liveBorder</div>
+              <div class="desc">Live badge border</div>
+            </div>
+            <div class="code">#a6c5a3</div>
+          </div>
+        </div>
+
+        <div class="swatch">
+          <div class="color liveText"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--liveText</div>
+              <div class="desc">Live badge text</div>
+            </div>
+            <div class="code">#324252</div>
+          </div>
+        </div>
+
+        <!-- Disabled -->
+        <div class="swatch">
+          <div class="color disabledBg"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--disabledBg</div>
+              <div class="desc">Disabled background</div>
+            </div>
+            <div class="code">#f3f4f6</div>
+          </div>
+        </div>
+
+        <div class="swatch">
+          <div class="color disabledBorder"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--disabledBorder</div>
+              <div class="desc">Disabled border</div>
+            </div>
+            <div class="code">#e5e7eb</div>
+          </div>
+        </div>
+
+        <div class="swatch">
+          <div class="color disabledText"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--disabledText</div>
+              <div class="desc">Disabled text</div>
+            </div>
+            <div class="code">#6b7280</div>
+          </div>
+        </div>
+
+        <!-- Overlay -->
+        <div class="swatch">
+          <div class="color overlay"></div>
+          <div class="meta">
+            <div class="left">
+              <div class="name">--overlay</div>
+              <div class="desc">Modal backdrop</div>
+            </div>
+            <div class="code">rgba(30,41,59,.5)</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Tip: Copy the <code>:root</code> variables into your project and use these tokens consistently for a clean VibeLive look.
+    </footer>
+  </div>
+</body>
+</html>
